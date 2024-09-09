@@ -1,2 +1,2 @@
-# P1-Middleware-Pong
-Distributed Systems Project 1: Middleware Implementation for Pong Game
+# P1: Middleware (Pong)
+Middleware Implementation for Multiplayer Pong Game
