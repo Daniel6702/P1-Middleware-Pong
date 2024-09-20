@@ -67,8 +67,7 @@ def run_client_menu():
     while running:
         screen.fill(black)
 
-        draw_text(f"Your IP: {client_ip}", font, white, screen, 100, 50)
-        draw_text(f"Your Port: {client_port}", font, white, screen, 100, 100)
+        draw_text(f"Your IP: {client_ip}:{client_port}", font, white, screen, 100, 50)
 
         # Draw the input box
         pygame.draw.rect(screen, white, input_box, 2)
@@ -133,4 +132,5 @@ def run_client_menu():
 # Example usage:
 if __name__ == "__main__":
     local_client, clients = run_client_menu()
+    print("Local client:", local_client)
     print("Clients added:", clients)

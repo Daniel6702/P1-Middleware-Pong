@@ -1,5 +1,5 @@
 import pygame
-from game_properties import *
+from Components.game_properties import *
 
 ##################################
 # Paddle

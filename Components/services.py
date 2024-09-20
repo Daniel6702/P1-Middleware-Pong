@@ -1,24 +1,13 @@
 import pygame
-from assets import Paddle, Ball
-from game_properties import WIDTH, HEIGHT, BLACK, WHITE
+from Components.assets import Paddle, Ball
+from Components.game_properties import WIDTH, HEIGHT, BLACK, WHITE
 
-def handle_events():
-    """Handle user input and events like quitting the game."""
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            return False
-    return True
-
-def handle_paddle_movement(keys, left_paddle, right_paddle):
+def handle_paddle_movement(keys, paddle):
     """Handle paddle movement based on key input."""
     if keys[pygame.K_w]:
-        left_paddle.move("up")
+        paddle.move("up")
     if keys[pygame.K_s]:
-        left_paddle.move("down")
-    if keys[pygame.K_UP]:
-        right_paddle.move("up")
-    if keys[pygame.K_DOWN]:
-        right_paddle.move("down")
+        paddle.move("down")
 
 def update_game_objects(ball, paddles):
     """Update the ball and check for collisions with paddles."""
