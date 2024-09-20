@@ -19,7 +19,7 @@ class Peer():
         self.subscriber = context.socket(zmq.SUB)
         self.subscriber.setsockopt_string(zmq.SUBSCRIBE, "")
         self.subscriber.setsockopt(zmq.RCVTIMEO, 10000)
-
+        
         # Start the sender and receiver threads
         sender_thread = threading.Thread(target=self.send_game_state)
         receiver_thread = threading.Thread(target=self.receive_game_state)
