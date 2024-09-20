@@ -15,34 +15,25 @@ if __name__ == "__main__":
     left_paddle = Paddle(x=10, y=(HEIGHT - PADDLE_HEIGHT) // 2)
     right_paddle = Paddle(x=WIDTH - 20, y=(HEIGHT - PADDLE_HEIGHT) // 2)
     ball = Ball()
+
     # Main game loop
     running = True
     clock = pygame.time.Clock()
 
     while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+        # Handle events (quit, input, etc.)
+        running = handle_events()
 
+        # Handle paddle movement
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_w]:
-            left_paddle.move("up")
-        if keys[pygame.K_s]:
-            left_paddle.move("down")
-        if keys[pygame.K_UP]:
-            right_paddle.move("up")
-        if keys[pygame.K_DOWN]:
-            right_paddle.move("down")
+        handle_paddle_movement(keys, left_paddle, right_paddle)
 
-        ball.update([left_paddle, right_paddle])
+        # Update ball and check for collisions
+        update_game_objects(ball, [left_paddle, right_paddle])
 
-        screen.fill(BLACK)
-        left_paddle.draw(screen)
-        right_paddle.draw(screen)
-        ball.draw(screen)
-        pygame.draw.aaline(screen, WHITE, (WIDTH // 2, 0), (WIDTH // 2, HEIGHT))
+        # Render game objects
+        render_game(screen, left_paddle, right_paddle, ball)
 
-        pygame.display.flip()
         clock.tick(60)
 
     pygame.quit()
