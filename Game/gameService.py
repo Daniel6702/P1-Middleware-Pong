@@ -1,6 +1,5 @@
 import pygame
-from Components.assets import Paddle, Ball
-from Components.game_properties import WIDTH, HEIGHT, BLACK, WHITE
+from game_properties import WIDTH, HEIGHT, BLACK, WHITE
 
 def handle_paddle_movement(keys, paddle):
     """Handle paddle movement based on key input."""
