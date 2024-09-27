@@ -40,16 +40,14 @@ class Peer():
         game_state_json = game_state.to_json()
         self.publisher.send_string(json.dumps({"state": game_state_json, "peer_name": self.peer_name}))
 
-    # Use the subscriber socket to receive game states from other peers
     def receive_game_state(self):
         while True:
             try:
                 message = self.subscriber.recv_string(flags=zmq.NOBLOCK)
-                state = json.loads(message).values()
+                state = json.loads(message)
                 self.apply_game_state(state["state"], state["peer_name"])
                 print(f"Received from {state['peer_name']}")
             except zmq.Again:
-                # No message received yet
                 pass
             time.sleep(0.01)
 
