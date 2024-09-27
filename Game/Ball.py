@@ -37,3 +37,14 @@ class Ball(pygame.Rect):
             self.collision_paddle(paddle)
         if self.x <= 0 or self.x >= WIDTH:
             self.reset()
+
+    def to_dict(self):
+        return {
+            'x': self.x,
+            'y': self.y,
+            'width': self.width,
+            'height': self.height,
+            'speed_x': self.speed_x,
+            'speed_y': self.speed_y,
+            'color': self.color
+        }

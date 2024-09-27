@@ -22,13 +22,10 @@ class Peer():
         self.subscriber.setsockopt(zmq.RCVTIMEO, 10000)
         
         # Start the sender and receiver threads
-        sender_thread = threading.Thread(target=self.send_game_state)
         receiver_thread = threading.Thread(target=self.receive_game_state)
 
-        sender_thread.daemon = True
         receiver_thread.daemon = True
 
-        sender_thread.start()
         receiver_thread.start()
 
         print(f"{self.peer_name} initialized and ready.")
@@ -38,11 +35,11 @@ class Peer():
         print(f"{self.peer_name} connected to peer at {ip}:{port}")
 
     # Use the publisher socket to send game states to other peers
-    def send_game_state(self, game_state: dict):
-        while True:
-            self.publisher.send_string(json.dumps({self.peer_name: game_state}))
-            print(f"{self.peer_name} sent game state: {game_state}")
-            time.sleep(1)  
+    def send_game_state(self, game_state):
+        print("Sending game state")
+        game_state_json = game_state.to_json()
+        self.publisher.send_string(json.dumps({self.peer_name: game_state_json}))
+        print(f"{self.peer_name} sent game state: {game_state_json}")
 
     # Use the subscriber socket to receive game states from other peers
     def receive_game_state(self):

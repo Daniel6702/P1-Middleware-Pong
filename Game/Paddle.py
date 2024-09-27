@@ -19,3 +19,13 @@ class Paddle(pygame.Rect):
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, self)
+
+    def to_dict(self):
+        return {
+            'x': self.x,
+            'y': self.y,
+            'width': self.width,
+            'height': self.height,
+            'speed': self.speed,
+            'color': self.color
+        }

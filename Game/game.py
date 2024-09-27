@@ -14,7 +14,10 @@ class GameState:
     ball: Ball
     
     def to_json(self):
-        return json.dumps(asdict(self), indent=4)
+        return json.dumps({
+            'paddle': self.paddle.to_dict(),
+            'ball': self.ball.to_dict()
+        }, indent=4)
 
 class Pong:
     def __init__(self, name, local_client, clients):
@@ -58,7 +61,8 @@ class Pong:
             self.handle_events()
             self._update()
             self._draw()
-            self.peer.send_game_state(GameState(self.paddle, self.ball).to_json())
+            print("Sending game state")
+            self.peer.send_game_state(GameState(self.paddle, self.ball))
             self.clock.tick(60)
 
     def _update(self):
