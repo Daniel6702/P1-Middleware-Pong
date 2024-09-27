@@ -21,15 +21,14 @@ class GameState:
 
 class Pong:
     def __init__(self, name, local_client, clients):
+        self.balls = []
+        self.paddles = []
         self.setup_p2p(name, local_client, clients, self.apply_game_state)
         pygame.init()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("Pong")
         self.clock = pygame.time.Clock()
         self.running = True
-
-        self.balls = []
-        self.paddles = []
 
         self.paddle = Paddle(10, HEIGHT // 2 - PADDLE_HEIGHT // 2)
         self.ball = Ball(WIDTH // 2, HEIGHT // 2)
