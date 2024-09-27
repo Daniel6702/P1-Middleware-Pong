@@ -48,5 +48,5 @@ class Ball(pygame.Rect):
             'height': self.height,
             'speed_x': self.speed_x,
             'speed_y': self.speed_y,
-            'color': self.color
+            'color': list(self.color)  # Convert tuple to list for JSON serialization
         }

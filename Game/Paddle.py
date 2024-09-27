@@ -27,5 +27,5 @@ class Paddle(pygame.Rect):
             'width': self.width,
             'height': self.height,
             'speed': self.speed,
-            'color': self.color
+            'color': list(self.color)  # Convert tuple to list for JSON serialization
         }
