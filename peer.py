@@ -36,7 +36,7 @@ class Peer():
 
     # Use the publisher socket to send game states to other peers
     def send_game_state(self, game_state):
-        print("Sending game state")
+        #print("Sending game state")
         game_state_json = game_state.to_json()
         self.publisher.send_string(json.dumps({self.peer_name: game_state_json}))
 
