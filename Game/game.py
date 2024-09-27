@@ -38,9 +38,9 @@ class Pong:
         self.balls.append(ball)
         self.paddles.append(paddle)
 
-    def setup_p2p(self, name, local_client, clients):
+    def setup_p2p(self, name, local_client, clients, apply_game_state):
         port = int(local_client.split(":")[1])
-        self.peer = Peer(name,port)
+        self.peer = Peer(name,port, apply_game_state)
 
         for client in clients:
             ip, port = client.split(":")
