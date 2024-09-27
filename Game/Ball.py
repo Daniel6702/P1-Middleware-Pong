@@ -1,8 +1,8 @@
-import pygame
-from game_properties import *
+from pygame import Rect, draw
+from game_properties import WIDTH, HEIGHT, BALL_SIZE, BALL_SPEED_X, BALL_SPEED_Y, WHITE
 from random import randint
 
-class Ball(pygame.Rect):
+class Ball(Rect):
     def __init__(self, x=WIDTH // 2 - BALL_SIZE // 2, y=HEIGHT // 2 - BALL_SIZE // 2,
                  width=BALL_SIZE, height=BALL_SIZE,
                  speed_x=BALL_SPEED_X, speed_y=BALL_SPEED_Y, color=WHITE, add_score: callable = None):
@@ -32,7 +32,7 @@ class Ball(pygame.Rect):
         self.speed_y *= -1
 
     def draw(self, screen):
-        pygame.draw.ellipse(screen, self.color, self)
+        draw.ellipse(screen, self.color, self)
 
     def update(self, padles):
         self.move()
