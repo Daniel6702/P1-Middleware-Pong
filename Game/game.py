@@ -18,7 +18,8 @@ class GameState:
             'paddle': self.paddle.to_dict(),
             'ball': self.ball.to_dict()
         }, indent=4)
-
+    
+class Pong:
     def __init__(self, name, local_client, clients):
         self.balls = []
         self.paddles = []
