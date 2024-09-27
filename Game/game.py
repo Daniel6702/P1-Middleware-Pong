@@ -62,7 +62,6 @@ class Pong:
             self.handle_events()
             self._update()
             self._draw()
-            print("Sending game state")
             self.peer.send_game_state(GameState(self.paddle, self.ball))
             self.clock.tick(60)
 
