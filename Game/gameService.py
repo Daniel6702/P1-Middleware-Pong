@@ -1,5 +1,6 @@
 import pygame
 from game_properties import WIDTH, HEIGHT, BLACK, WHITE
+from Game.Ball import Ball
 
 def handle_paddle_movement(keys, paddle):
     """Handle paddle movement based on key input."""
@@ -8,7 +9,7 @@ def handle_paddle_movement(keys, paddle):
     if keys[pygame.K_s]:
         paddle.move("down")
 
-def update_game_objects(ball, paddles):
+def update_game_objects(ball: Ball, paddles):
     """Update the ball and check for collisions with paddles."""
     ball.update(paddles)
 

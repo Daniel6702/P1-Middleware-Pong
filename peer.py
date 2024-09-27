@@ -8,8 +8,9 @@ import random
 context = zmq.Context()
 
 class Peer():
-    def __init__(self, peer_name: str, bind_port: int):
+    def __init__(self, peer_name: str, bind_port: int, apply_game_state: callable):
         self.peer_name = peer_name
+        self.apply_game_state = apply_game_state
 
         # Create publisher socket to send game states to other peers
         self.publisher = context.socket(zmq.PUB)
@@ -37,11 +38,10 @@ class Peer():
         print(f"{self.peer_name} connected to peer at {ip}:{port}")
 
     # Use the publisher socket to send game states to other peers
-    def send_game_state(self):
+    def send_game_state(self, game_state: dict):
         while True:
-            game_state = {"peer_name": self.peer_name, "game_state": random.randint(0, 100)}
-            self.publisher.send_string(json.dumps(game_state))
-            print(f"{self.peer_name} sent game state: {game_state['game_state']}")
+            self.publisher.send_string(json.dumps({self.peer_name: game_state}))
+            print(f"{self.peer_name} sent game state: {game_state}")
             time.sleep(1)  
 
     # Use the subscriber socket to receive game states from other peers
@@ -50,6 +50,7 @@ class Peer():
             try:
                 message = self.subscriber.recv_string(flags=zmq.NOBLOCK)
                 peer_name, state = json.loads(message).values()
+                self.apply_game_state(state, peer_name)
                 print(f"Received from {peer_name}: {state}")
             except zmq.Again:
                 # No message received yet
