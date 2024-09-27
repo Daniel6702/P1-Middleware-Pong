@@ -1,8 +1,8 @@
 import pygame
 from game_properties import *
-
 class Paddle(pygame.Rect):
-    def __init__(self, x, y, width = PADDLE_WIDTH, height = PADDLE_HEIGHT, speed = PADDLE_SPEED, color = WHITE):
+    def __init__(self, x, y, width=PADDLE_WIDTH, height=PADDLE_HEIGHT,
+                 speed=PADDLE_SPEED, color=WHITE):
         super().__init__(x, y, width, height)
         self.speed = speed
         self.color = color

@@ -2,8 +2,10 @@ import pygame
 from game_properties import *
 
 class Ball(pygame.Rect):
-    def __init__(self, x = WIDTH // 2 - BALL_SIZE // 2, y = HEIGHT // 2 - BALL_SIZE // 2, size = BALL_SIZE, speed_x = BALL_SPEED_X, speed_y = BALL_SPEED_Y, color = WHITE):
-        super().__init__(x, y, size, size)
+    def __init__(self, x=WIDTH // 2 - BALL_SIZE // 2, y=HEIGHT // 2 - BALL_SIZE // 2,
+                 width=BALL_SIZE, height=BALL_SIZE,
+                 speed_x=BALL_SPEED_X, speed_y=BALL_SPEED_Y, color=WHITE):
+        super().__init__(x, y, width, height)
         self.color = color
         self.speed_x = speed_x
         self.speed_y = speed_y
