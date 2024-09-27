@@ -8,8 +8,6 @@ def handle_paddle_movement(keys, paddle):
         paddle.move("up")
     if keys[constants.K_s]:
         paddle.move("down")
-    else:
-        print("Key was not recognised!")
 
 def update_game_objects(ball: Ball, paddles):
     """Update the ball and check for collisions with paddles."""

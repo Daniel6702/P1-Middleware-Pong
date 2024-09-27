@@ -1,9 +1,11 @@
+import pygame
 from game_properties import *
-from Paddle import Paddle
-from gameService import *
+from .Paddle import Paddle
+from .Ball import Ball
+from .gameService import handle_paddle_movement
 import sys
 from peer import Peer
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 import json 
 
 @dataclass
