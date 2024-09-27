@@ -1,12 +1,14 @@
 import pygame
 from game_properties import *
+from random import randint
 
 class Ball(pygame.Rect):
     def __init__(self, x=WIDTH // 2 - BALL_SIZE // 2, y=HEIGHT // 2 - BALL_SIZE // 2,
                  width=BALL_SIZE, height=BALL_SIZE,
-                 speed_x=BALL_SPEED_X, speed_y=BALL_SPEED_Y, color=WHITE):
+                 speed_x=BALL_SPEED_X, speed_y=BALL_SPEED_Y, color=WHITE, add_score: callable = None):
         super().__init__(x, y, width, height)
-        self.color = color
+        self.add_score = add_score
+        self.color = (randint(100, 255), randint(100, 255), randint(100, 255))
         self.speed_x = speed_x
         self.speed_y = speed_y
         self.reset()
@@ -37,8 +39,13 @@ class Ball(pygame.Rect):
         self.collision_ceiling()
         for paddle in padles:
             self.collision_paddle(paddle)
-        if self.x <= 0 or self.x >= WIDTH:
+        if self.x <= 0:
             self.reset()
+            self.add_score(1)
+            
+        if self.x >= WIDTH:
+            self.reset()
+            self.add_score(0)
 
     def to_dict(self):
         return {

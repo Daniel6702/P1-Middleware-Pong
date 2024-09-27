@@ -12,7 +12,7 @@ BLACK = (0, 0, 0)
 #############################
 # Paddle
 #############################
-PADDLE_WIDTH, PADDLE_HEIGHT = 11, 100
+PADDLE_WIDTH, PADDLE_HEIGHT = 11, 300
 PADDLE_SPEED = 5
 
 #############################

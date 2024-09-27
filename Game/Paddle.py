@@ -1,11 +1,13 @@
 import pygame
 from game_properties import *
+from random import randint
+
 class Paddle(pygame.Rect):
     def __init__(self, x, y, width=PADDLE_WIDTH, height=PADDLE_HEIGHT,
                  speed=PADDLE_SPEED, color=WHITE):
         super().__init__(x, y, width, height)
         self.speed = speed
-        self.color = color
+        self.color = (randint(100, 255), randint(100, 255), randint(100, 255))
         self.reset()
 
     def move(self, direction):

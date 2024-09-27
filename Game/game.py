@@ -25,6 +25,7 @@ class Pong:
         self.paddles = []
         self.peers_paddles = {}
         self.peers_balls = {}
+        self.score = [0, 0]
         self.setup_p2p(name, local_client, clients, self.apply_game_state)
 
         pygame.init()
@@ -33,8 +34,10 @@ class Pong:
         self.clock = pygame.time.Clock()
         self.running = True
 
-        self.paddle = Paddle(WIDTH - PADDLE_WIDTH // 2, HEIGHT // 2 - PADDLE_HEIGHT // 2)
-        self.ball = Ball(WIDTH // 2, HEIGHT // 2)
+        self.paddle = Paddle(PADDLE_WIDTH // 2, HEIGHT // 2 - PADDLE_HEIGHT // 2)
+        self.ball = Ball(WIDTH // 2, HEIGHT // 2, add_score=self.add_score)
+
+        
 
     def apply_game_state(self, game_state_json, peer_name):
         # Deserialize the JSON string
@@ -74,7 +77,8 @@ class Pong:
                 height=ball_data['height'],
                 speed_x=ball_data['speed_x'],
                 speed_y=ball_data['speed_y'],
-                color=tuple(ball_data['color'])
+                color=tuple(ball_data['color'],
+                            add_score=self.add_score)
             )
             self.peers_balls[peer_name] = ball
         else:
@@ -103,6 +107,9 @@ class Pong:
             if event.type == pygame.QUIT:
                 return False
         return True
+    
+    def add_score(self, player):
+        self.score[player] += 1
 
     def run(self):
         while self.running:
@@ -119,7 +126,6 @@ class Pong:
         # Update only your own ball
         update_game_objects(self.ball, [self.paddle] + list(self.peers_paddles.values()))
 
-
     def _draw(self):
         self.screen.fill(BLACK)
         self.paddle.draw(self.screen)
@@ -129,6 +135,13 @@ class Pong:
         for ball in self.peers_balls.values():
             ball.draw(self.screen)
         pygame.draw.aaline(self.screen, WHITE, (WIDTH // 2, 0), (WIDTH // 2, HEIGHT))
+
+        #draw score
+        font = pygame.font.Font(None, 74)
+        score_text = font.render(f"{self.score[0]} : {self.score[1]}", True, WHITE)
+        score_text_rect = score_text.get_rect(center=(WIDTH // 2, 50))
+        self.screen.blit(score_text, score_text_rect)
+
         pygame.display.flip()
 
 
