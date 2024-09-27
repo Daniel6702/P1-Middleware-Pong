@@ -1,20 +1,6 @@
-import pygame
 from game_properties import *
-from .Paddle import Paddle
-from .Ball import Ball
-from .gameService import *
-import sys
-from peer import Peer
-from dataclasses import dataclass, asdict
-import json 
-
-# Pong.py
-
-import pygame
-from game_properties import *
-from .Paddle import Paddle
-from .Ball import Ball
-from .gameService import *
+from Paddle import Paddle
+from gameService import *
 import sys
 from peer import Peer
 from dataclasses import dataclass, asdict
