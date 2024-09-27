@@ -7,6 +7,6 @@ if __name__ == "__main__":
     local_client, client = menu.run()
 
     # Game
-    game = Pong("Alice", local_client, client)
+    game = Pong("Bob", local_client, client)
     game.run()
     game.quit()

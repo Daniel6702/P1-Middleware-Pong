@@ -35,6 +35,7 @@ class Pong:
         self.ball = Ball(WIDTH // 2, HEIGHT // 2)
 
     def apply_game_state(self, game_state, peer_name):
+        print(f"Applying game state from {peer_name}")
         game_state = json.loads(game_state)
         paddle = Paddle(**game_state["paddle"])
         ball = Ball(**game_state["ball"])
