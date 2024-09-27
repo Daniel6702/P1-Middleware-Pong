@@ -1,5 +1,4 @@
 import socket
-import psutil
 
 def draw_text(text, font, color, surface, x, y):
     """Draws text at the specified position in the specified font and color."""
@@ -24,12 +23,6 @@ def validate_ip_port(input_str):
 
 def get_ipv4():
     """Gets the users ipv4 address"""
-    possible_interface_names = ['wlan0', 'wlp3s0', 'Wi-Fi', 'wifi0', 'wlan1']
-
-    for interface_name, interface_addresses in psutil.net_if_addrs().items():
-        if any(interface_name.lower().startswith(name.lower()) for name in possible_interface_names):
-            for address in interface_addresses:
-                if address.family == socket.AF_INET:
-                    return address.address
-
-    return None
+    hostname = socket.gethostname()
+    ipaddr = socket.gethostbyname(hostname)
+    return ipaddr
