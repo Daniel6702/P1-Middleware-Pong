@@ -24,6 +24,7 @@ import json
 class GameState:
     paddle: Paddle
     ball: Ball = None  # Ball can be None for non-owners
+    score: list = None
 
     def to_json(self):
         data = {
@@ -31,6 +32,7 @@ class GameState:
         }
         if self.ball is not None:
             data['ball'] = self.ball.to_dict()
+            data['score'] = self.score
         return json.dumps(data, indent=4)
         
 class Pong:
@@ -56,6 +58,9 @@ class Pong:
         game_state = json.loads(game_state_json)
         paddle_data = game_state['paddle']
         ball_data = game_state.get('ball', None)
+        score = game_state.get('score', None)
+        if score is not None:
+            self.score = score
 
         # Update or create the peer's paddle
         if peer_name not in self.paddles:
@@ -110,7 +115,7 @@ class Pong:
             self._update()
             self._draw()
             if self.is_ball_owner:
-                self.peer.send_game_state(GameState(self.paddle, self.ball))
+                self.peer.send_game_state(GameState(self.paddle, self.ball, self.score))
             else:
                 self.peer.send_game_state(GameState(self.paddle))
             self.clock.tick(60)
