@@ -1,5 +1,5 @@
 import pygame
-from game_properties import WIDTH, HEIGHT, BLACK, WHITE
+from properties import WIDTH, HEIGHT, BLACK, WHITE
 from Game.Ball import Ball
 
 def handle_paddle_movement(keys, paddle):

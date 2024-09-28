@@ -1,12 +1,12 @@
 from Game.game import Pong
-from Menu.menu import Menu
+from Menu.menu import menu
 
 if __name__ == "__main__":
     # Menu
-    menu = Menu()
-    local_client, client = menu.run()
+    peer = menu()
+    print(f'Peer ID: {peer.id}, IS LEADER: {peer.is_leader}, LEADER ID: {peer.leader_id}')
 
     # Game
-    game = Pong("Alice", local_client, client)
-    game.run()
-    game.quit()
+    #game = Pong(peer)
+    #game.run()
+    #game.quit()
