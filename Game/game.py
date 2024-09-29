@@ -5,26 +5,12 @@ from .Ball import Ball
 from .gameService import *
 import sys
 from Middleware.peer import Peer
-from dataclasses import dataclass, asdict
 import json 
-
-@dataclass
-class GameState:
-    paddle: 'Paddle'
-    ball: 'Ball' = None  # Ball can be None for non-owners
-    score: list = None
-
-    def to_json(self):
-        data = {
-            'paddle': self.paddle.to_dict(),
-        }
-        if self.ball is not None:
-            data['ball'] = self.ball.to_dict()
-            data['score'] = self.score
-        return json.dumps(data)
+from Middleware.message import Message
+from Game.GameState import GameState
 
 class Pong:
-    def __init__(self, peer: Peer, name: str = "player1"):
+    def __init__(self, peer: 'Peer', name: str = "player1"):
         self.peer = peer
         self.peer.on_message_received = self.on_message_received
 
@@ -58,26 +44,32 @@ class Pong:
         else:
             self.ball = None  # Non-leaders don't own the ball
 
-    def on_message_received(self, message):
+
+    def on_message_received(self, message: Message):
         """
         Callback for handling incoming messages from peers.
-        Expects 'data' type messages containing game state JSON.
+        Expects 'game_state' type messages containing game state data.
         """
-        msg_type = message.get("type")
+        msg_type = message.type
         if msg_type == "game_state":
-            game_state_json = message.get("data", "")
-            sender_id = message.get("id", "")
-            self.apply_game_state(game_state_json, sender_id)
+            game_state_data = message.data.get("game_state")
+            sender_id = message.id
+            if game_state_data:
+                self.apply_game_state(game_state_data, sender_id)
 
-    def apply_game_state(self, game_state_json: str, sender_id: str):
+    def apply_game_state(self, game_state_data: dict, sender_id: str):
         """
         Apply the received game state to update local game objects.
         """
         try:
-            game_state = json.loads(game_state_json)
-            paddle_data = game_state['paddle']
-            ball_data = game_state.get('ball', None)
-            score = game_state.get('score', None)
+            # Create a GameState instance from the received data
+            game_state = GameState.from_dict(game_state_data)
+            paddle_data = game_state.paddle.to_dict()
+            ball_data = game_state.ball.to_dict() if game_state.ball else None
+            score = game_state.score
+
+            if ball_data:
+                print(f'BALL DATA: {ball_data["x"]}')
 
             if score is not None:
                 self.score = score
@@ -85,14 +77,7 @@ class Pong:
             # Update or create the sender's paddle
             peer_name = self.get_peer_name_by_id(sender_id)
             if peer_name not in self.paddles:
-                paddle = Paddle(
-                    x=paddle_data['x'],
-                    y=paddle_data['y'],
-                    width=paddle_data['width'],
-                    height=paddle_data['height'],
-                    speed=paddle_data['speed'],
-                    color=tuple(paddle_data['color'])
-                )
+                paddle = Paddle.from_dict(paddle_data)
                 self.paddles[peer_name] = paddle
             else:
                 paddle = self.paddles[peer_name]
@@ -154,10 +139,16 @@ class Pong:
                 game_state = GameState(self.paddle, self.ball, self.score)
             else:
                 game_state = GameState(self.paddle)
-            self.peer.send_public_message(
-                message={'data': game_state.to_json()},
-                type="game_state"
+            
+            # Create a Message instance for game_state
+            game_state_message = Message(
+                id=str(self.peer.id),
+                type="game_state",
+                data={
+                    "game_state": game_state.to_dict()
+                }
             )
+            self.peer.send_public_message(game_state_message)
 
             self.clock.tick(60)  # Maintain 60 FPS
 
@@ -195,3 +186,4 @@ class Pong:
         """
         pygame.quit()
         sys.exit()
+

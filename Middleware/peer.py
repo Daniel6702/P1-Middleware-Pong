@@ -5,6 +5,8 @@ import random
 import uuid
 from properties import POLL_RATE
 from Middleware.utils import get_ipv4
+from Middleware.message import Message
+from dataclasses import asdict
 
 class Peer:
     def __init__(self, 
@@ -63,10 +65,10 @@ class Peer:
             print(f"Node: {self.id} already connected to peer at {ip}:{port} with peer_id {peer_id}")
 
     # Use the publisher socket to send messages to other peers
-    def send_public_message(self, message: dict, type: str = "data"):
-        message["id"] = str(self.id)
-        message["type"] = type
-        self.publisher.send_string(json.dumps(message))
+    def send_public_message(self, message: Message):
+        serialized_message = message.to_json()
+        self.publisher.send_string(serialized_message)
+        print(f"Node: {self.id} sent {message.type} message: {serialized_message}")
 
     # Use the subscriber socket to receive messages from other peers
     def receive_message(self):
@@ -78,29 +80,29 @@ class Peer:
                 socks = dict(poller.poll(POLL_RATE)) 
 
                 if self.subscriber in socks and socks[self.subscriber] == zmq.POLLIN:
-                    message = json.loads(self.subscriber.recv_string())
-                    #print(f"Node: {self.id} received message: {message}")
-                    msg_type = message.get("type", None)
-                    if msg_type in ["election", "answer", "coordinator", "heartbeat"]:
+                    raw_message = self.subscriber.recv_string()
+                    message = Message.from_json(raw_message)
+                    if message is None:
+                        continue  # Skip processing if message couldn't be decoded
+
+                    # Handle the message based on its type
+                    if message.type in ["election", "answer", "coordinator", "heartbeat"]:
                         self.leader_service.receive_leader_message_queue.put(message)
                     else:
                         self.on_message_received(message)
+                        print(f"Node: {self.id} received message: {message}")
 
-            except json.JSONDecodeError: 
-                print("Received invalid JSON message.")
             except Exception as e: 
                 print(f"Error receiving message: {e}")
 
-    def send_private_message(self, address, message: dict, type: str):
-        message["id"] = str(self.id)
-        message["type"] = type
-        serialized_message = json.dumps(message)
+    def send_private_message(self, address: str, message: Message):
+        serialized_message = message.to_json()
         try:
             temp_socket = self.context.socket(zmq.PUSH)
             temp_socket.connect(f"tcp://{address}")
             temp_socket.send_string(serialized_message)
             temp_socket.close()
-            print(f"Node: {self.id} sent {message['type']} message to {address}")
+            print(f"Node: {self.id} sent {message.type} message to {address}")
         except Exception as e:
             print(f"Error sending message to peer {address}: {e}")
 

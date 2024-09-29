@@ -6,6 +6,7 @@ from Middleware.utils import get_broadcast_address
 from properties import UDP_BROADCAST_PORT, PRESENCE_BROADCAST_INTERVAL
 from properties import KEY
 from Middleware.peer import Peer
+from Middleware.message import Message 
 
 UDP_BROADCAST_IP = get_broadcast_address()
 
@@ -20,15 +21,11 @@ UDP Discovery Service
 '''
 
 class DiscoveryService:
-    def __init__(self, peer: Peer):
+    def __init__(self, peer: 'Peer'):
         """
         Initialize the DiscoveryService with XOR encryption.
 
-        :param id: Unique identifier for the node.
-        :param ip: IP address of the node.
-        :param port: Port number to bind the UDP socket.
-        :param key: 4-byte (32-bit) pre-shared key for XOR encryption.
-        :param on_peer_found: Callback function when a peer is discovered.
+        :param peer: Instance of the Peer class.
         """
         if not isinstance(KEY, bytes) or len(KEY) != 4:
             raise ValueError("Key must be a 4-byte (32-bit) bytes object.")
@@ -64,15 +61,20 @@ class DiscoveryService:
                 encrypted_data, addr = self.udp_listener.recvfrom(4096)  # Increased buffer size if needed
                 decrypted_data = self._xor_cipher(encrypted_data)
                 message_str = decrypted_data.decode('utf-8')
-                message = json.loads(message_str)
-                msg_type = message.get("type", None)
+                message = Message.from_json(message_str)
+                
+                if message is None:
+                    continue  # Skip processing if message couldn't be decoded
+
+                msg_type = message.type
                 if msg_type == "presence":
-                    sender_id = message.get("id")
-                    sender_ip = message.get("ip")
-                    sender_port = message.get("port")
+                    sender_id = message.id
+                    sender_ip = message.data.get("ip")
+                    sender_port = message.data.get("port")
                     if sender_id and sender_ip and sender_port:
                         if sender_id != str(self.peer.id):
                             self.peer.add_peer(sender_ip, sender_port, sender_id)
+                            print(f"DiscoveryService: Found peer {sender_id} at {sender_ip}:{sender_port}")
             except socket.timeout:
                 continue
             except UnicodeDecodeError:
@@ -84,19 +86,22 @@ class DiscoveryService:
 
     def broadcast_presence(self, interval=1):
         while not self.discovery_stop_event.is_set():
-            message = {
-                "id": str(self.peer.id),
-                "type": "presence",
-                "ip": self.peer.ip,
-                "port": self.peer.bind_port
-            }
-            serialized_message = json.dumps(message)
+            # Create a Message instance for presence
+            presence_message = Message(
+                id=str(self.peer.id),
+                type="presence",
+                data={
+                    "ip": self.peer.ip,
+                    "port": self.peer.bind_port
+                }
+            )
+            serialized_message = presence_message.to_json()
             message_bytes = serialized_message.encode('utf-8')
             encrypted_message = self._xor_cipher(message_bytes)
             # Broadcast over UDP
             try:
                 self.udp_socket.sendto(encrypted_message, (UDP_BROADCAST_IP, UDP_BROADCAST_PORT))
-                print(f"Node: {self.peer.id} broadcasted encrypted presence via UDP.")
+                print(f"DiscoveryService: Node {self.peer.id} broadcasted encrypted presence via UDP.")
             except Exception as e:
                 print(f"Error broadcasting presence: {e}")
             time.sleep(interval)
@@ -106,12 +111,12 @@ class DiscoveryService:
         self.discovery_stop_event.set()
         if hasattr(self, 'udp_listener_thread') and self.udp_listener_thread.is_alive():
             self.udp_listener_thread.join()
-            print(f"Node: {self.peer.id} UDP listener thread stopped.")
+            print(f"DiscoveryService: Node {self.peer.id} UDP listener thread stopped.")
 
         # Stop UDP broadcast thread
         if hasattr(self, 'discovery_thread') and self.discovery_thread.is_alive():
             self.discovery_thread.join()
-            print(f"Node: {self.peer.id} UDP broadcast thread stopped.")
+            print(f"DiscoveryService: Node {self.peer.id} UDP broadcast thread stopped.")
 
     def start_discovery(self):
         # Initialize the stop event
@@ -120,15 +125,15 @@ class DiscoveryService:
         # Start UDP listener thread
         self.udp_listener_thread = threading.Thread(target=self.listen_udp, daemon=True)
         self.udp_listener_thread.start()
-        print(f"Node: {self.peer.id} UDP listener thread started.")
+        print(f"DiscoveryService: Node {self.peer.id} UDP listener thread started.")
 
         # Start UDP broadcast thread
         self.discovery_thread = threading.Thread(target=self.broadcast_presence, args=(PRESENCE_BROADCAST_INTERVAL,), daemon=True)
         self.discovery_thread.start()
-        print(f"Node: {self.peer.id} UDP broadcast thread started.")
+        print(f"DiscoveryService: Node {self.peer.id} UDP broadcast thread started.")
 
     def kill(self):
         self.stop_discovery()
         self.udp_socket.close()
         self.udp_listener.close()
-        print(f"Node: {self.peer.id} discovery service stopped.")
+        print(f"DiscoveryService: Node {self.peer.id} discovery service stopped.")

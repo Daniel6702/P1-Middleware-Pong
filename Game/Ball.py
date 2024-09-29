@@ -5,15 +5,25 @@ from Game.Paddle import Paddle
 from typing import Callable
 
 class Ball(pygame.Rect):
-    def __init__(self, x=WIDTH // 2 - BALL_SIZE // 2, y=HEIGHT // 2 - BALL_SIZE // 2,
-                 width=BALL_SIZE, height=BALL_SIZE,
-                 speed_x=BALL_SPEED_X, speed_y=BALL_SPEED_Y, color=WHITE, add_score: Callable = None):
+    def __init__(
+        self,
+        x=WIDTH // 2 - BALL_SIZE // 2,
+        y=HEIGHT // 2 - BALL_SIZE // 2,
+        width=BALL_SIZE,
+        height=BALL_SIZE,
+        speed_x=BALL_SPEED_X,
+        speed_y=BALL_SPEED_Y,
+        color=WHITE,
+        add_score: Callable = None,
+        skip_reset: bool = False  # New parameter
+    ):
         super().__init__(x, y, width, height)
         self.add_score = add_score
         self.color = color
         self.speed_x = speed_x
         self.speed_y = speed_y
-        self.reset()
+        if not skip_reset:
+            self.reset()
 
     def move(self):
         self.x += self.speed_x
@@ -23,7 +33,7 @@ class Ball(pygame.Rect):
         if self.y <= 0 or self.y + self.height >= HEIGHT:
             self.speed_y *= -1
 
-    def collision_paddle(self, paddle: Paddle):
+    def collision_paddle(self, paddle: 'Paddle'):
         if self.colliderect(paddle):
             self.speed_x *= -1
 
@@ -59,7 +69,20 @@ class Ball(pygame.Rect):
     def draw(self, screen):
         pygame.draw.ellipse(screen, self.color, self)
 
-    def to_dict(self):
+    @staticmethod
+    def from_dict(data: dict) -> 'Ball':
+        return Ball(
+            x=data['x'],
+            y=data['y'],
+            width=data['width'],
+            height=data['height'],
+            speed_x=data['speed_x'],
+            speed_y=data['speed_y'],
+            color=tuple(data['color']),
+            skip_reset=True  # Prevent resetting position
+        )
+
+    def to_dict(self) -> dict:
         return {
             'x': self.x,
             'y': self.y,

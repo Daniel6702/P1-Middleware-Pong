@@ -35,3 +35,6 @@ class Paddle(pygame.Rect):
             'speed': self.speed,
             'color': list(self.color)  # Convert tuple to list for JSON serialization
         }
+    
+    def from_dict(data: dict) -> 'Paddle':
+        return Paddle(data['x'], data['y'], data['width'], data['height'], data['speed'], tuple(data['color']))
