@@ -7,6 +7,6 @@ if __name__ == "__main__":
     print(f'Peer ID: {peer.id}, IS LEADER: {peer.is_leader}, LEADER ID: {peer.leader_id}')
 
     # Game
-    #game = Pong(peer)
-    #game.run()
-    #game.quit()
+    game = Pong(peer)
+    game.run()
+    game.quit()

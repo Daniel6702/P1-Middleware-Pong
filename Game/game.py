@@ -155,7 +155,7 @@ class Pong:
             else:
                 game_state = GameState(self.paddle)
             self.peer.send_public_message(
-                message=json.loads(game_state.to_json()),
+                message={'data': game_state.to_json()},
                 type="game_state"
             )
 

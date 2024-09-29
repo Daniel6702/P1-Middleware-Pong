@@ -79,7 +79,7 @@ class Peer:
 
                 if self.subscriber in socks and socks[self.subscriber] == zmq.POLLIN:
                     message = json.loads(self.subscriber.recv_string())
-                    print(f"Node: {self.id} received message: {message}")
+                    #print(f"Node: {self.id} received message: {message}")
                     msg_type = message.get("type", None)
                     if msg_type in ["election", "answer", "coordinator", "heartbeat"]:
                         self.leader_service.receive_leader_message_queue.put(message)

@@ -116,6 +116,7 @@ class LeaderSelectionService:
         If the node is the leader, periodically send heartbeat messages to all peers.
         """
         while self.peer.is_leader:
+            print(f"Node: {self.peer.id} sending heartbeat.")
             self.peer.send_public_message({}, type="heartbeat")
             time.sleep(HEARTBEAT_INTERVAL)
 
