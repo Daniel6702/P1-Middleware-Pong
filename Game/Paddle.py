@@ -1,5 +1,5 @@
 import pygame
-from game_properties import *
+from properties import *
 from random import randint
 
 class Paddle(pygame.Rect):
@@ -7,17 +7,21 @@ class Paddle(pygame.Rect):
                  speed=PADDLE_SPEED, color=WHITE):
         super().__init__(x, y, width, height)
         self.speed = speed
-        self.color = (randint(100, 255), randint(100, 255), randint(100, 255))
-        self.reset()
+        self.color = color
 
-    def move(self, direction):
+    def move(self, direction: str):
         if direction == "up" and self.top > 0:
             self.y -= self.speed
         if direction == "down" and self.bottom < HEIGHT:
             self.y += self.speed
 
-    def reset(self):
-        self.y = (HEIGHT - PADDLE_HEIGHT) // 2
+    def update_from_dict(self, data: dict):
+        self.x = data['x']
+        self.y = data['y']
+        self.width = data['width']
+        self.height = data['height']
+        self.speed = data['speed']
+        self.color = tuple(data['color'])
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, self)
@@ -31,3 +35,6 @@ class Paddle(pygame.Rect):
             'speed': self.speed,
             'color': list(self.color)  # Convert tuple to list for JSON serialization
         }
+    
+    def from_dict(data: dict) -> 'Paddle':
+        return Paddle(data['x'], data['y'], data['width'], data['height'], data['speed'], tuple(data['color']))
