@@ -41,9 +41,29 @@ class Pong:
                 y=HEIGHT // 2 - BALL_SIZE // 2,
                 add_score=self.add_score
             )
+            self.organize_peers()
         else:
             self.ball = None  # Non-leaders don't own the ball
 
+    def organize_peers(self):
+        """
+        Organize the peers in the game.
+        """
+        for i, peer in self.peer.peers:
+            if i % 2 == 0:
+                side_message = Message(
+                    id=str(self.peer.id),
+                    type="side",
+                    data={"side": "left"}
+                )
+            else: 
+                side_message = Message(
+                    id=str(self.peer.id),
+                    type="side",
+                    data={"side": "right"}
+                )
+            self.peer.send_private_message(peer[0], side_message)
+        self.paddle.x = WIDTH - PADDLE_WIDTH - 10
 
     def on_message_received(self, message: Message):
         """
@@ -56,6 +76,13 @@ class Pong:
             sender_id = message.id
             if game_state_data:
                 self.apply_game_state(game_state_data, sender_id)
+        elif msg_type == "side":
+            side = message.data.get("side")
+            if side:
+                if side == "left":
+                    self.paddle.x = 10
+                elif side == "right":
+                    self.paddle.x = WIDTH - PADDLE_WIDTH - 10
 
     def apply_game_state(self, game_state_data: dict, sender_id: str):
         """

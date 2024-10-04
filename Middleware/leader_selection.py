@@ -91,7 +91,7 @@ class LeaderSelectionService:
         def wait_for_responses():
             time.sleep(ELECTION_TIMEOUT_CHECK)
             with self.lock:
-                if self.peer.leader_id is None:
+                if self.peer.leader_id is None: 
                     self.declare_leader()
                 self.election_in_progress = False
 
@@ -155,7 +155,7 @@ class LeaderSelectionService:
     def handle_election_message(self, message: Message):
         """
         Handle incoming ELECTION messages by sending an ANSWER and initiating own election.
-
+        
         :param message: Message instance containing the ELECTION message.
         """
         sender_id = message.id

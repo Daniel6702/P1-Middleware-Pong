@@ -1,24 +1,15 @@
 import pygame
-import sys
 from Middleware.peer import Peer
-from properties import FPS
-
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
-BACKGROUND_COLOR = (30, 30, 30)
-TEXT_COLOR = (255, 255, 255)
-FONT_SIZE = 20
-PEER_LIST_START_Y = 200
-PEER_LIST_PADDING = 30
+from properties import FPS, FONT_SIZE, BACKGROUND_COLOR, WHITE, MENU_WINDOW_WIDTH, MENU_WINDOW_HEIGHT
 
 def menu() -> Peer:
     # Initialize Pygame
     pygame.init()
-    screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+    screen = pygame.display.set_mode((MENU_WINDOW_WIDTH, MENU_WINDOW_HEIGHT))
     pygame.display.set_caption("Peer-to-Peer Network")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont(None, FONT_SIZE)
-
+    
     # Initialize Peer
     peer = Peer()
 
@@ -41,13 +32,13 @@ def menu() -> Peer:
 
         # Display local peer information
         local_info = f"Local Peer ID: {peer.id},         IP: {peer.ip},          Port: {peer.bind_port}"
-        local_id_surface = font.render(local_info, True, TEXT_COLOR)
+        local_id_surface = font.render(local_info, True, WHITE)
         screen.blit(local_id_surface, (50, 50))
 
         # Display peers list title
         peers_title = "Connected Peers:"
-        peers_title_surface = font.render(peers_title, True, TEXT_COLOR)
-        screen.blit(peers_title_surface, (50, PEER_LIST_START_Y - 30))
+        peers_title_surface = font.render(peers_title, True, WHITE)
+        screen.blit(peers_title_surface, (50, 170))
 
         # Fetch the current list of peers
         peers = peer.get_peers()
@@ -60,8 +51,8 @@ def menu() -> Peer:
                 peer_ip, peer_port = peer_i[0].split(":")
 
             peer_info = f"Peer {index + 1}: ID: {peer_id}, IP: {peer_ip}, Port: {peer_port}"
-            peer_surface = font.render(peer_info, True, TEXT_COLOR)
-            screen.blit(peer_surface, (50, PEER_LIST_START_Y + index * PEER_LIST_PADDING))
+            peer_surface = font.render(peer_info, True, WHITE)
+            screen.blit(peer_surface, (50, 200 + index * 30))
 
         # Update the display
         pygame.display.flip()
