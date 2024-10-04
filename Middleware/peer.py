@@ -54,7 +54,7 @@ class Peer:
         receiver_thread.start()        
 
     def add_peer(self, ip: str, port: int, peer_id: str, peer_ready: bool):
-        if ip == self.ip and port == self.bind_port: 
+        if ip == self.ip and port == self.bind_port and peer_ready == self.ready:
             return
 
         peer_address = f"{ip}:{port}"

@@ -87,9 +87,9 @@ def menu() -> Peer:
         clock.tick(FPS)
 
         # Check if everyone is ready
-        peers_ready = [p[2] for p in peers]
-        if len(peers) > 0 and len(peers) == len(peers_ready):
-            break
+        peers_ready = [p for p in peers if p[2]]
+        if len(peers) > 0 and len(peers) == len(peers_ready) and peer.ready:
+           break
 
 
     # Graceful shutdown
