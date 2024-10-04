@@ -63,6 +63,10 @@ def menu() -> Peer:
             peer_surface = font.render(peer_info, True, TEXT_COLOR)
             screen.blit(peer_surface, (50, PEER_LIST_START_Y + index * PEER_LIST_PADDING))
 
+        # Create ready button
+        ready_surface = font.render("Ready", True, TEXT_COLOR)
+        screen.blit(ready_surface, (50, WINDOW_HEIGHT - 50))
+
         # Update the display
         pygame.display.flip()
 

@@ -1,5 +1,4 @@
 import socket
-import psutil
 import os
 import uuid
 
@@ -15,7 +14,7 @@ def validate_ip_port(input_str):
         return False
     return False
 
-def find_internet_connected_ip():
+def get_ipv4():
     """Finds the ip address connected to the internet."""
     try:
         test_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -26,16 +25,6 @@ def find_internet_connected_ip():
         return ip
     except Exception as e:
         return None
-
-def get_ipv4():
-    """Gets the users ipv4 address"""
-    if os.name == 'nt':
-        return find_internet_connected_ip()
-    else:
-        hostname = socket.gethostname()
-        ipaddr = socket.gethostbyname(hostname)
-        return ipaddr
-    return None
 
 def get_broadcast_address():
     local_ip = get_ipv4()
