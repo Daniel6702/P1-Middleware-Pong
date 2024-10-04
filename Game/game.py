@@ -49,7 +49,7 @@ class Pong:
         """
         Organize the peers in the game.
         """
-        for i, peer in self.peer.peers:
+        for i, peer in enumerate(self.peer.peers):
             if i % 2 == 0:
                 side_message = Message(
                     id=str(self.peer.id),
