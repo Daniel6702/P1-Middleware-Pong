@@ -1,17 +1,17 @@
 import zmq
 import threading
-import json
 import random
 import uuid
 from properties import POLL_RATE
 from Middleware.utils import get_ipv4
 from Middleware.message import Message
-from dataclasses import asdict
+
 
 class Peer:
     def __init__(self, 
                  ip: str = None, 
-                 port: int = None, 
+                 port: int = None,
+                 ready: bool = False,
                  on_message_received: callable = lambda: print("Message received")):
         
         self.id = uuid.uuid4()
@@ -21,7 +21,7 @@ class Peer:
         self.peers = set()  # Set of tuples: (peer_address, peer_id)
         self.is_leader = False
         self.leader_id = None  # UUID of the current leader
-        self.ready = False # Ready state
+        self.ready = ready # Ready state
 
         self.setup_zmq()
 
@@ -53,17 +53,31 @@ class Peer:
         receiver_thread = threading.Thread(target=self.receive_message, daemon=True)
         receiver_thread.start()        
 
-    def add_peer(self, ip: str, port: int, peer_id: str, peer_ready: bool):
-        if ip == self.ip and port == self.bind_port and peer_ready == self.ready:
+    def add_peer(self, peer):
+        # Check if peer is oneself
+        if peer == self:
             return
 
-        peer_address = f"{ip}:{port}"
-        if peer_address not in self.peers:
-            self.subscriber.connect(f"tcp://{ip}:{port}")
-            self.peers.add((peer_address, peer_id, peer_ready))
-            print(f"Node: {self.id} connected to peer at {ip}:{port} with peer_id {peer_id}")
+        # If peer is not known add it (only compare using IP since ready_state may vary)
+        if peer.ip not in self.peers:
+            self.subscriber.connect(f"tcp://{peer.ip}:{peer.bind_port}")
+            self.peers.add(peer)
+            print(f"Node: {self.id} connected to peer at {peer.ip}:{peer.port} with peer_id {peer.id}")
+
+        # If peer is known, update it
         else:
-            print(f"Node: {self.id} already connected to peer at {ip}:{port} with peer_id {peer_id}")
+            print(f"Node: {self.id} already connected to peer at {peer.ip}:{peer.port} with peer_id {peer.peer_id}")
+
+    # if peer.ip == self.ip and peer.port == self.bind_port and peer.ready == self.ready:
+        #     return
+
+        # peer_address = f"{peer.ip}:{peer.port}"
+        # if peer_address not in self.peers:
+        #     self.subscriber.connect(f"tcp://{ip}:{port}")
+        #     self.peers.add((peer_address, peer_id, peer_ready))
+        #     print(f"Node: {self.id} connected to peer at {ip}:{port} with peer_id {peer_id}")
+        # else:
+
 
     # Use the publisher socket to send messages to other peers
     def send_public_message(self, message: Message):
