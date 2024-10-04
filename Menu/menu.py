@@ -1,7 +1,9 @@
 import pygame
 import sys
+
+from Menu.menuService import setReady
 from Middleware.peer import Peer
-from properties import FPS
+from properties import FPS, WHITE
 
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 600
@@ -29,18 +31,24 @@ def menu() -> Peer:
     # Update the Peer instance to use the new message handler
     peer.on_message_received = handle_message
 
+    # Create a rectangle to detect button clicks
+    button_rect = pygame.Rect(50, WINDOW_HEIGHT-50, 45, 15)
+
     running = True
 
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if button_rect.collidepoint(event.pos):
+                    peer.ready = True
 
         # Clear the screen
         screen.fill(BACKGROUND_COLOR)
 
         # Display local peer information
-        local_info = f"Local Peer ID: {peer.id},         IP: {peer.ip},          Port: {peer.bind_port}"
+        local_info = f"Local Peer ID: {peer.id},         IP: {peer.ip},          Port: {peer.bind_port},        Ready: {peer.ready}"
         local_id_surface = font.render(local_info, True, TEXT_COLOR)
         screen.blit(local_id_surface, (50, 50))
 
@@ -64,7 +72,11 @@ def menu() -> Peer:
             screen.blit(peer_surface, (50, PEER_LIST_START_Y + index * PEER_LIST_PADDING))
 
         # Create ready button
-        ready_surface = font.render("Ready", True, TEXT_COLOR)
+        if (button_rect.collidepoint(pygame.mouse.get_pos())):
+            btn_color = pygame.Color(255, 0, 0)
+        else:
+            btn_color = TEXT_COLOR
+        ready_surface = font.render("Ready", True, btn_color)
         screen.blit(ready_surface, (50, WINDOW_HEIGHT - 50))
 
         # Update the display
@@ -72,6 +84,9 @@ def menu() -> Peer:
 
         # Cap the frame rate
         clock.tick(FPS)
+
+        # Check if everyone is ready
+
 
     # Graceful shutdown
     peer.discovery_service.stop_discovery()

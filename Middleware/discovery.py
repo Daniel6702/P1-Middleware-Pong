@@ -71,6 +71,7 @@ class DiscoveryService:
                     sender_id = message.id
                     sender_ip = message.data.get("ip")
                     sender_port = message.data.get("port")
+                    sender_ready = message.data.get("ready")
                     if sender_id and sender_ip and sender_port:
                         if sender_id != str(self.peer.id):
                             self.peer.add_peer(sender_ip, sender_port, sender_id)
@@ -92,7 +93,8 @@ class DiscoveryService:
                 type="presence",
                 data={
                     "ip": self.peer.ip,
-                    "port": self.peer.bind_port
+                    "port": self.peer.bind_port,
+                    "ready": self.peer.ready
                 }
             )
             serialized_message = presence_message.to_json()

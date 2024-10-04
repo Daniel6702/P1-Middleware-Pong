@@ -21,6 +21,7 @@ class Peer:
         self.peers = set()  # Set of tuples: (peer_address, peer_id)
         self.is_leader = False
         self.leader_id = None  # UUID of the current leader
+        self.ready = False # Ready state
 
         self.setup_zmq()
 
