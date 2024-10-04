@@ -61,16 +61,17 @@ def menu() -> Peer:
         peers = peer.get_peers()
 
         # Display each peer's information
-        for index, peer_i in enumerate(peers):
-            peer_id, peer_ip, peer_port, peer_ready = "N/A", "N/A", "N/A", "N/A"
-            if len(peer_i) == 3:
-                peer_id = peer_i[1]
-                peer_ip, peer_port = peer_i[0].split(":")
-                peer_ready = peer_i[2]
+        # for index, peer_i in enumerate(peers):
+        #     peer_id, peer_ip, peer_port, peer_ready = "N/A", "N/A", "N/A", "N/A"
+        #     if len(peer_i) == 3:
+        #         peer_id = peer_i[1]
+        #         peer_ip, peer_port = peer_i[0].split(":")
+        #         peer_ready = peer_i[2]
 
-            peer_info = f"Peer {index + 1}: ID: {peer_id}, IP: {peer_ip}, Port: {peer_port}, Ready: {peer_ready}"
+        for i,p in enumerate(peers):
+            peer_info = f"Peer {i + 1}: ID: {p.id}, IP: {p.ip}, Port: {p.bind_port}, Ready: {p.ready}"
             peer_surface = font.render(peer_info, True, TEXT_COLOR)
-            screen.blit(peer_surface, (50, PEER_LIST_START_Y + index * PEER_LIST_PADDING))
+            screen.blit(peer_surface, (50, PEER_LIST_START_Y + i * PEER_LIST_PADDING))
 
         # Create ready button
         if (button_rect.collidepoint(pygame.mouse.get_pos())):
@@ -87,7 +88,7 @@ def menu() -> Peer:
         clock.tick(FPS)
 
         # Check if everyone is ready
-        peers_ready = [p for p in peers if p[2]]
+        peers_ready = [p for p in peers if p.ready]
         if len(peers) > 0 and len(peers) == len(peers_ready) and peer.ready:
            break
 
