@@ -45,10 +45,14 @@ class Pong:
         else:
             self.ball = None  # Non-leaders don't own the ball
 
+        self.game_state_received = set()
+
     def organize_peers(self):
+        print("Organizing peers")
         """
         Organize the peers in the game.
         """
+        self.paddle.x = WIDTH - PADDLE_WIDTH - 10
         for i, peer in enumerate(self.peer.peers):
             if i % 2 == 0:
                 side_message = Message(
@@ -56,14 +60,13 @@ class Pong:
                     type="side",
                     data={"side": "left"}
                 )
-            else: 
+            else:
                 side_message = Message(
                     id=str(self.peer.id),
                     type="side",
                     data={"side": "right"}
                 )
             self.peer.send_private_message(peer[0], side_message)
-        self.paddle.x = WIDTH - PADDLE_WIDTH - 10
 
     def on_message_received(self, message: Message):
         """
@@ -74,8 +77,15 @@ class Pong:
         if msg_type == "game_state":
             game_state_data = message.data.get("game_state")
             sender_id = message.id
+
+            self.game_state_received.add(sender_id)
+
             if game_state_data:
                 self.apply_game_state(game_state_data, sender_id)
+
+            if self.is_leader and len(self.game_state_received) == len(self.peer.peers):
+                self.organize_peers()
+
         elif msg_type == "side":
             side = message.data.get("side")
             if side:
