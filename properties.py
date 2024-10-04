@@ -30,7 +30,7 @@ PADDLE_SPEED = 5
 #############################
 BALL_SIZE = 20
 BALL_SPEED_X = 5
-BALL_SPEED_Y = 5
+BALL_SPEED_Y = 6
 
 #############################
 # Middleware 
