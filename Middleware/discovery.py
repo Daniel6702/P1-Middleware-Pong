@@ -74,7 +74,7 @@ class DiscoveryService:
                     sender_ready = message.data.get("ready")
                     if sender_id and sender_ip and sender_port:
                         if sender_id != str(self.peer.id):
-                            self.peer.add_peer(sender_ip, sender_port, sender_id)
+                            self.peer.add_peer(sender_ip, sender_port, sender_id, sender_ready)
                             print(f"DiscoveryService: Found peer {sender_id} at {sender_ip}:{sender_port}")
             except socket.timeout:
                 continue

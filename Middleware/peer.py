@@ -53,14 +53,14 @@ class Peer:
         receiver_thread = threading.Thread(target=self.receive_message, daemon=True)
         receiver_thread.start()        
 
-    def add_peer(self, ip: str, port: int, peer_id: str):
+    def add_peer(self, ip: str, port: int, peer_id: str, peer_ready: bool):
         if ip == self.ip and port == self.bind_port: 
             return
 
         peer_address = f"{ip}:{port}"
         if peer_address not in self.peers:
             self.subscriber.connect(f"tcp://{ip}:{port}")
-            self.peers.add((peer_address, peer_id))
+            self.peers.add((peer_address, peer_id, peer_ready))
             print(f"Node: {self.id} connected to peer at {ip}:{port} with peer_id {peer_id}")
         else:
             print(f"Node: {self.id} already connected to peer at {ip}:{port} with peer_id {peer_id}")

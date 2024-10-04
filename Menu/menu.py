@@ -62,12 +62,13 @@ def menu() -> Peer:
 
         # Display each peer's information
         for index, peer_i in enumerate(peers):
-            peer_id, peer_ip, peer_port = "N/A", "N/A", "N/A"
-            if len(peer_i) == 2:
+            peer_id, peer_ip, peer_port, peer_ready = "N/A", "N/A", "N/A", "N/A"
+            if len(peer_i) == 3:
                 peer_id = peer_i[1]
                 peer_ip, peer_port = peer_i[0].split(":")
+                peer_ready = peer_i[2]
 
-            peer_info = f"Peer {index + 1}: ID: {peer_id}, IP: {peer_ip}, Port: {peer_port}"
+            peer_info = f"Peer {index + 1}: ID: {peer_id}, IP: {peer_ip}, Port: {peer_port}, Ready: {peer_ready}"
             peer_surface = font.render(peer_info, True, TEXT_COLOR)
             screen.blit(peer_surface, (50, PEER_LIST_START_Y + index * PEER_LIST_PADDING))
 
@@ -86,6 +87,9 @@ def menu() -> Peer:
         clock.tick(FPS)
 
         # Check if everyone is ready
+        peers_ready = [p[2] for p in peers]
+        if len(peers) > 0 and len(peers) == len(peers_ready):
+            break
 
 
     # Graceful shutdown
