@@ -53,7 +53,7 @@ class LeaderSelectionService:
                     continue  # Leader doesn't need to monitor heartbeats
                 elapsed = time.time() - self.heartbeat_last_received
                 if elapsed > ELECTION_TIMEOUT:
-                    print(f"Node: {self.peer.id} detected leader timeout. Initiating election.")
+                    print(f"Node: {str(self.peer.id)[:10]} detected leader timeout. Initiating election.")
                     self.initiate_election()
 
     def initiate_election(self):
@@ -63,7 +63,7 @@ class LeaderSelectionService:
         """
         with self.lock:
             if self.election_in_progress:
-                print(f"Node: {self.peer.id} election already in progress. Aborting new initiation.")
+                print(f"Node: {str(self.peer.id)[:10]} election already in progress. Aborting new initiation.")
                 return  # Avoid multiple simultaneous elections
             self.election_in_progress = True
 
@@ -85,7 +85,7 @@ class LeaderSelectionService:
             data={}
         )
         for peer_info in higher_peers:
-            self.peer.send_private_message(peer_info[0], election_message)
+            self.peer.send_private_message(peer_info[1], election_message)
 
         # Wait for ANSWER messages
         def wait_for_responses():
@@ -105,7 +105,7 @@ class LeaderSelectionService:
         """
         self.peer.is_leader = True
         self.peer.leader_id = self.peer.id
-        print(f"Node: {self.peer.id} is declaring itself as the leader.")
+        print(f"Node: {str(self.peer.id)[:10]} is declaring itself as the leader.")
         coordinator_message = Message(
             id=str(self.peer.id),
             type="coordinator",
@@ -113,7 +113,7 @@ class LeaderSelectionService:
         )
         # Broadcast COORDINATOR message to all peers
         for peer_info in self.peer.peers:
-            self.peer.send_private_message(peer_info[0], coordinator_message)
+            self.peer.send_private_message(peer_info[1], coordinator_message)
         # Start sending heartbeats
         heartbeat_thread = threading.Thread(target=self.send_heartbeats, daemon=True)
         heartbeat_thread.start()
@@ -129,7 +129,7 @@ class LeaderSelectionService:
                 data={}
             )
             self.peer.send_public_message(heartbeat_message)
-            print(f"Node: {self.peer.id} sending heartbeat.")
+            print(f"Node: {str(self.peer.id)[:10]} sending heartbeat.")
             time.sleep(HEARTBEAT_INTERVAL)
 
     def handle_leader_messages(self):
@@ -159,7 +159,7 @@ class LeaderSelectionService:
         :param message: Message instance containing the ELECTION message.
         """
         sender_id = message.id
-        print(f"Node: {self.peer.id} received ELECTION message from {sender_id}.")
+        print(f"Node: {str(self.peer.id)[:10]}received ELECTION message from {sender_id}.")
         # Send ANSWER message back
         answer_message = Message(
             id=str(self.peer.id),
@@ -168,7 +168,7 @@ class LeaderSelectionService:
         )
         sender_peer = self.peer.get_peer_by_id(sender_id)
         if sender_peer:
-            self.peer.send_private_message(sender_peer[0], answer_message)
+            self.peer.send_private_message(sender_peer[1], answer_message)
         # Initiate own election if not already in progress
         self.initiate_election()
 
@@ -179,7 +179,7 @@ class LeaderSelectionService:
         :param message: Message instance containing the ANSWER message.
         """
         sender_id = message.id
-        print(f"Node: {self.peer.id} received ANSWER message from {sender_id}.")
+        print(f"Node: {str(self.peer.id)[:10]} received ANSWER message from {sender_id}.")
         # A higher peer is alive, wait for coordinator message
         with self.lock:
             self.peer.leader_id = sender_id  # Tentatively accept the higher peer as leader
@@ -191,17 +191,17 @@ class LeaderSelectionService:
         :param message: Message instance containing the COORDINATOR message.
         """
         sender_id = message.id
-        print(f"Node: {self.peer.id} received COORDINATOR message from {sender_id}.")
+        print(f"Node: {str(self.peer.id)[:10]} received COORDINATOR message from {sender_id}.")
         with self.lock:
             self.peer.leader_id = sender_id
             self.peer.is_leader = (self.peer.id == uuid.UUID(sender_id))
             if self.peer.is_leader:
-                print(f"Node: {self.peer.id} is confirmed as the leader.")
+                print(f"Node: {str(self.peer.id)[:10]} is confirmed as the leader.")
                 # Start sending heartbeats if not already
                 heartbeat_thread = threading.Thread(target=self.send_heartbeats, daemon=True)
                 heartbeat_thread.start()
             else:
-                print(f"Node: {self.peer.id} recognizes {sender_id} as the leader.")
+                print(f"Node: {str(self.peer.id)[:10]} recognizes {sender_id} as the leader.")
         self.heartbeat_last_received = time.time()
 
     def handle_heartbeat_message(self, message: Message):
@@ -215,7 +215,7 @@ class LeaderSelectionService:
         with self.lock:
             if self.peer.leader_id != sender_id:
                 self.peer.leader_id = sender_id
-                print(f"Node: {self.peer.id} updated leader to {sender_id} based on heartbeat.")
+                print(f"Node: {str(self.peer.id)[:10]} updated leader to {sender_id} based on heartbeat.")
             self.heartbeat_last_received = time.time()
 
     def shutdown(self):
@@ -223,5 +223,5 @@ class LeaderSelectionService:
         Cleanly shut down the LeaderSelectionService.
         """
         # No explicit shutdown logic required as threads are daemons
-        print(f"LeaderSelectionService for Node: {self.peer.id} is shutting down.")
+        print(f"LeaderSelectionService for Node: {str(self.peer.id)[:10]} is shutting down.")
 

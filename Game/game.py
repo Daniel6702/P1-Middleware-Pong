@@ -12,7 +12,8 @@ from Game.GameState import GameState
 class Pong:
     def __init__(self, peer: 'Peer', name: str = "player1"):
         self.peer = peer
-        self.peer.on_message_received = self.on_message_received
+        self.game_state_received = set()
+        self.is_peers_organized = False
 
         self.paddles = {}
         self.score = [0, 0]
@@ -27,9 +28,10 @@ class Pong:
         self.clock = pygame.time.Clock()
         self.running = True
 
-        # Initialize your paddle
+        # Initialize your paddle    
         self.paddle = Paddle(
-            x=WIDTH - PADDLE_WIDTH - 10 if self.is_leader else 10,  # Position based on role
+            #x=WIDTH - PADDLE_WIDTH - 10 if self.is_leader else 10,  # Position based on role
+            x = WIDTH // 2,
             y=HEIGHT // 2 - PADDLE_HEIGHT // 2
         )
         self.paddles[self.name] = self.paddle  # Add your own paddle to the paddles dictionary
@@ -41,11 +43,10 @@ class Pong:
                 y=HEIGHT // 2 - BALL_SIZE // 2,
                 add_score=self.add_score
             )
-            self.organize_peers()
         else:
             self.ball = None  # Non-leaders don't own the ball
 
-        self.game_state_received = set()
+        self.peer.on_message_received = self.on_message_received
 
     def organize_peers(self):
         print("Organizing peers")
@@ -66,7 +67,8 @@ class Pong:
                     type="side",
                     data={"side": "right"}
                 )
-            self.peer.send_private_message(peer[0], side_message)
+            self.peer.send_private_message(peer[1], side_message)
+        self.is_peers_organized = True
 
     def on_message_received(self, message: Message):
         """
@@ -83,10 +85,11 @@ class Pong:
             if game_state_data:
                 self.apply_game_state(game_state_data, sender_id)
 
-            if self.is_leader and len(self.game_state_received) == len(self.peer.peers):
+            if self.is_leader and len(self.game_state_received) == len(self.peer.peers) and not self.is_peers_organized:
                 self.organize_peers()
 
         elif msg_type == "side":
+            print("Received side message")
             side = message.data.get("side")
             if side:
                 if side == "left":
@@ -105,8 +108,8 @@ class Pong:
             ball_data = game_state.ball.to_dict() if game_state.ball else None
             score = game_state.score
 
-            if ball_data:
-                print(f'BALL DATA: {ball_data["x"]}')
+            #if ball_data:
+            #    print(f'BALL DATA: {ball_data["x"]}')
 
             if score is not None:
                 self.score = score
