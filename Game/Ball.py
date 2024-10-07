@@ -35,7 +35,13 @@ class Ball(pygame.Rect):
 
     def collision_paddle(self, paddle: 'Paddle'):
         if self.colliderect(paddle):
-            self.speed_x *= -1
+            paddle_center = paddle.y + paddle.height // 2
+            ball_center = self.y + self.height // 2
+            offset = ball_center - paddle_center
+            speed_offset = offset / (paddle.height // 2)
+            self.speed_y = speed_offset * BALL_SPEED_Y
+            self.speed_y *= 1.05
+            self.speed_x *= -1.05
 
     def reset(self):
         self.x = WIDTH // 2 - BALL_SIZE // 2
