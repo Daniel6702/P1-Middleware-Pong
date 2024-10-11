@@ -36,6 +36,9 @@ BALL_SPEED_Y = 6
 # Middleware 
 #############################
 
+#Logging
+LOGS_DIR = "logs"
+
 #Peer
 POLL_RATE = 1000 
 

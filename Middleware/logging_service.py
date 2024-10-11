@@ -4,6 +4,9 @@ import queue
 import time
 from Middleware.message import Message
 import psutil
+import statistics
+import os
+from properties import LOGS_DIR
 
 class LogTransmissionTimes:
     def __init__(self):
@@ -13,7 +16,7 @@ class LogTransmissionTimes:
         logging_thread.start()
 
     def log_transmission_times(self):
-        with open("transmission_times.log", "a") as f:
+        with open(f"{LOGS_DIR}/transmission_times.log", "a") as f:
             while True:
                 try:
                     transmission_time = self.transmission_times.get(timeout=10)
@@ -30,7 +33,7 @@ class LogDropoutRate:
         dropout_logging_thread.start()
 
     def log_dropout_rate(self):
-        with open("dropout_rate.log", "a") as f:
+        with open(f"{LOGS_DIR}/dropout_rate.log", "a") as f:
             while True:
                 time.sleep(60)  # Log every minute
                 with self.dropout_lock:
@@ -50,7 +53,7 @@ class LogRealTimeViolations:
         real_time_logging_thread.start()
 
     def log_real_time_constraints(self):
-        with open("real_time_constraints.log", "a") as f:
+        with open(f"{LOGS_DIR}/real_time_constraints.log", "a") as f:
             while True:
                 time.sleep(60)  # Log every minute
                 with self.real_time_lock:
@@ -73,7 +76,7 @@ class LogThroughput:
         throughput_logging_thread.start()
 
     def log_throughput(self): 
-        with open("throughput.log", "a") as f:
+        with open(f"{LOGS_DIR}/throughput.log", "a") as f:
             while True:
                 time.sleep(1)  # Log every second
                 with self.throughput_lock:
@@ -102,7 +105,7 @@ class LogBandwidth:
         bandwidth_logging_thread.start()
 
     def log_bandwidth(self):
-        with open("bandwidth.log", "a") as f:
+        with open(f"{LOGS_DIR}/bandwidth.log", "a") as f:
             while True:
                 time.sleep(60)  # Log every minute
                 with self.bandwidth_lock:
@@ -130,7 +133,7 @@ class LogErrorRate:
         error_logging_thread.start()
 
     def log_errors(self):
-        with open("errors.log", "a") as f:
+        with open(f"{LOGS_DIR}/errors.log", "a") as f:
             while True:
                 time.sleep(60)  # Log every minute
                 with self.error_lock:
@@ -150,7 +153,7 @@ class LogResourceUtilization:
         resource_logging_thread.start()
 
     def log_resources(self):
-        with open("resources.log", "a") as f:
+        with open(f"{LOGS_DIR}/resources.log", "a") as f:
             while True:
                 time.sleep(60)  # Log every minute
                 process = psutil.Process()
@@ -160,6 +163,30 @@ class LogResourceUtilization:
                 f.write(f"{time.time()},{cpu_percent},{memory_usage_mb}\n")
                 print(f"Resource Usage - CPU: {cpu_percent}%, Memory: {memory_usage_mb:.2f} MB")
 
+class LogFPS:
+    def __init__(self):
+        self.fps_samples = []
+        self.fps_lock = threading.Lock()
+        fps_logging_thread = threading.Thread(target=self.log_fps, daemon=True)
+        fps_logging_thread.start()
+
+    def log_fps(self):
+        with open(f"{LOGS_DIR}/fps.log", "a") as f:
+            while True:
+                time.sleep(60)  # Log every minute
+                with self.fps_lock:
+                    if self.fps_samples:
+                        avg_fps = statistics.mean(self.fps_samples)
+                        min_fps = min(self.fps_samples)
+                        max_fps = max(self.fps_samples)
+                        f.write(f"{time.time()},{avg_fps},{min_fps},{max_fps}\n")
+                        print(f"FPS - Avg: {avg_fps:.2f}, Min: {min_fps:.2f}, Max: {max_fps:.2f}")
+                        self.fps_samples.clear()
+    
+    def add_fps_sample(self, fps: float):
+        with self.fps_lock:
+            self.fps_samples.append(fps)
+
 
 class LoggingService(
     LogTransmissionTimes,   # Time taken for a message to be sent and received
@@ -168,9 +195,11 @@ class LoggingService(
     LogThroughput,          # Number of messages sent and received per second
     LogBandwidth,           # Amount of data sent and received per minute
     LogErrorRate,           # Number of errors in message handling per minute
-    LogResourceUtilization):# CPU and memory usage of the process 
+    LogResourceUtilization, # CPU and memory usage of the process 
+    LogFPS):                # Frames per second of the game
 
     def __init__(self, peer: 'Peer'):
+        os.makedirs(LOGS_DIR, exist_ok=True)
         super().__init__()
         self.peer = peer
 
