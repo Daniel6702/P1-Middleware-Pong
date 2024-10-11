@@ -75,9 +75,7 @@ class Peer:
 
     # Use the publisher socket to send messages to other peers
     def send_public_message(self, message: Message):
-        message.send_timestamp = time.time()
-        with self.logging_service.dropout_lock:
-            self.logging_service.sent_messages.add(message.msg_id)
+        self.logging_service.on_message_sent(message)
         serialized_message = message.to_json()
         topic = "public"
         full_message = f"{topic} {serialized_message}"
@@ -85,9 +83,7 @@ class Peer:
 
     # Use the publisher socket to send private messages
     def send_private_message(self, peer_id: str, message: Message):
-        message.send_timestamp = time.time()
-        with self.logging_service.dropout_lock:
-            self.logging_service.sent_messages.add(message.msg_id)
+        self.logging_service.on_message_sent(message)
         topic = f"private:{peer_id}"
         serialized_message = message.to_json()
         full_message = f"{topic} {serialized_message}"
@@ -101,7 +97,7 @@ class Peer:
         
         while True:
             try:
-                socks = dict(poller.poll(1000))  # Adjust POLL_RATE as needed
+                socks = dict(poller.poll(POLL_RATE))  # Adjust POLL_RATE as needed
 
                 if self.subscriber in socks and socks[self.subscriber] == zmq.POLLIN:
                     raw_message = self.subscriber.recv_string()
@@ -110,22 +106,15 @@ class Peer:
                         topic, message_json = raw_message.split(' ', 1)
                     except ValueError:
                         print(f"Received malformed message: {raw_message}")
+                        self.logging_service.increment_error_count()
                         continue
 
                     message = Message.from_json(message_json)
                     if message is None:
-                        continue  # Skip processing if message couldn't be decoded
+                        self.logging_service.increment_error_count()
+                        continue
 
-                    if message.msg_id:
-                        with self.logging_service.dropout_lock:
-                            self.logging_service.received_messages.add(message.id)
-
-                    if message.send_timestamp:
-                        transmission_time = message.receive_timestamp - message.send_timestamp
-                        self.logging_service.transmission_times.put(transmission_time)
-
-                        if transmission_time > self.logging_service.max_allowed_latency:
-                            self.logging_service.increment_real_time_violations()
+                    self.logging_service.on_message_received(message)
 
                     # Handle the message based on its type
                     if message.type in ["election", "answer", "coordinator", "heartbeat"]:
@@ -139,6 +128,7 @@ class Peer:
                 continue
             except Exception as e: 
                 print(f"Error receiving message: {e}")
+                self.logging_service.increment_error_count()
 
     def get_peer_by_id(self, peer_id: str):
         for peer in self.peers:
