@@ -7,6 +7,8 @@ from properties import POLL_RATE
 from Middleware.utils import get_ipv4
 from Middleware.message import Message
 from dataclasses import asdict
+import time
+import queue
 
 class Peer:
     def __init__(self, 
@@ -22,6 +24,9 @@ class Peer:
         self.is_leader = False
         self.leader_id = None  # UUID of the current leader
 
+        # Initialize Logging
+        self.init_logging_service()
+
         self.setup_zmq()
 
         # Initialize DiscoveryService
@@ -31,6 +36,21 @@ class Peer:
         # Initialize LeaderSelectionService
         from Middleware.leader_selection import LeaderSelectionService
         self.leader_service = LeaderSelectionService(self)
+
+    def init_logging_service(self):
+        self.transmission_times = queue.Queue()
+        self.transmission_lock = threading.Lock()
+        logging_thread = threading.Thread(target=self.log_transmission_times, daemon=True)
+        logging_thread.start()
+
+    def log_transmission_times(self):
+        with open("transmission_times.log", "a") as f:
+            while True:
+                try:
+                    transmission_time = self.transmission_times.get(timeout=10)
+                    f.write(f"{transmission_time}\n")
+                except queue.Empty:
+                    continue
 
     def get_peers(self):
         return self.peers
@@ -70,6 +90,7 @@ class Peer:
 
     # Use the publisher socket to send messages to other peers
     def send_public_message(self, message: Message):
+        message.send_timestamp = time.time()
         serialized_message = message.to_json()
         topic = "public"
         full_message = f"{topic} {serialized_message}"
@@ -77,6 +98,7 @@ class Peer:
 
     # Use the publisher socket to send private messages
     def send_private_message(self, peer_id: str, message: Message):
+        message.send_timestamp = time.time()
         topic = f"private:{peer_id}"
         serialized_message = message.to_json()
         full_message = f"{topic} {serialized_message}"
@@ -104,6 +126,10 @@ class Peer:
                     message = Message.from_json(message_json)
                     if message is None:
                         continue  # Skip processing if message couldn't be decoded
+
+                    if message.send_timestamp:
+                        transmission_time = message.receive_timestamp - message.send_timestamp
+                        self.transmission_times.put(transmission_time)
 
                     # Handle the message based on its type
                     if message.type in ["election", "answer", "coordinator", "heartbeat"]:
