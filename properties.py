@@ -2,7 +2,7 @@
 # Game properties
 #############################
 WIDTH, HEIGHT = 800, 600
-FPS = 30
+FPS = 60
 
 #############################
 # Menu properties

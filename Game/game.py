@@ -8,45 +8,73 @@ from Middleware.peer import Peer
 import json 
 from Middleware.message import Message
 from Game.GameState import GameState
+import time
+import threading
 
 class Pong:
     def __init__(self, peer: 'Peer', name: str = "player1"):
-        self.peer = peer
-        self.game_state_received = set()
-        self.is_peers_organized = False
+        #Initialize Pygame
+        self.init_pygame()
 
-        self.paddles = {}
+        # Initialize Game variables
         self.score = [0, 0]
-        self.name = name
+        self.paddle = Paddle(x = WIDTH // 2, y = HEIGHT // 2 - PADDLE_HEIGHT // 2)
+        self.paddles = {name : self.paddle}
+        self.ball = None  
+        self.is_running = False
+        self.countdown = None
 
-        # Determine leadership status
+        # Initialize Middleware
+        self.peer = peer
+        self.peers_ingame = set()
+        self.is_peers_organized = False
         self.is_leader = self.peer.is_leader
+        self.peer.on_message_received = self.on_message_received
 
+        # --- TEST ---
+        #self.start_game()
+        # --- TEST ---
+
+    def init_pygame(self):
         pygame.init()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("Multiplayer Pong")
         self.clock = pygame.time.Clock()
         self.running = True
 
-        # Initialize your paddle    
-        self.paddle = Paddle(
-            #x=WIDTH - PADDLE_WIDTH - 10 if self.is_leader else 10,  # Position based on role
-            x = WIDTH // 2,
-            y=HEIGHT // 2 - PADDLE_HEIGHT // 2
-        )
-        self.paddles[self.name] = self.paddle  # Add your own paddle to the paddles dictionary
-
-        # Initialize the ball only if this peer is the leader
-        if self.is_leader:
+    def start_game(self):
+        def logic():
+            print("Starting game")
+            #Begin countdown
+            for i in range(3,0,-1):
+                print(i)
+                countdown_message = Message(
+                    id = str(self.peer.id),
+                    type = "countdown",
+                    data = {"value": i}
+                )
+                self.countdown = i
+                self.peer.send_public_message(countdown_message)
+                time.sleep(1.5)
+            #Create Ball
             self.ball = Ball(
-                x=WIDTH // 2 - BALL_SIZE // 2,
-                y=HEIGHT // 2 - BALL_SIZE // 2,
-                add_score=self.add_score
-            )
-        else:
-            self.ball = None  # Non-leaders don't own the ball
-
-        self.peer.on_message_received = self.on_message_received
+                    x=WIDTH // 2 - BALL_SIZE // 2,
+                    y=HEIGHT // 2 - BALL_SIZE // 2,
+                    add_score=self.add_score
+                )
+            #Organize players into teams
+            self.organize_peers()
+            #Send "Begin" message
+            countdown_message = Message(
+                id = str(self.peer.id),
+                type = "countdown",
+                data = {"value": "begin"}
+            ) 
+            self.countdown = None
+            self.peer.send_public_message(countdown_message)
+            self.is_running = True
+        start_thread = threading.Thread(target=logic)
+        start_thread.start()
 
     def organize_peers(self):
         print("Organizing peers")
@@ -79,23 +107,50 @@ class Pong:
         if msg_type == "game_state":
             game_state_data = message.data.get("game_state")
             sender_id = message.id
+            self.apply_game_state(game_state_data, sender_id)
 
-            self.game_state_received.add(sender_id)
-
-            if game_state_data:
-                self.apply_game_state(game_state_data, sender_id)
-
-            if self.is_leader and len(self.game_state_received) == len(self.peer.peers) and not self.is_peers_organized:
-                self.organize_peers()
+        elif msg_type == "ingame":
+            self.peers_ingame.add(message.id)
+            if self.is_leader and len(self.peers_ingame) >= len(self.peer.peers) and not self.is_peers_organized:
+                self.start_game()
 
         elif msg_type == "side":
-            print("Received side message")
             side = message.data.get("side")
             if side:
                 if side == "left":
                     self.paddle.x = 10
                 elif side == "right":
                     self.paddle.x = WIDTH - PADDLE_WIDTH - 10
+
+        elif msg_type == "countdown":
+            value = message.data.get("value")
+            if value == "begin":
+                self.is_running = True
+                self.countdown = None
+            else:
+                self.countdown = value
+
+    def text(self, txt: str, x: int, y: int, font_size: int = 20, color: tuple = WHITE):
+        font = pygame.font.SysFont(None, font_size)
+        surface = font.render(txt, True, color)
+        self.screen.blit(surface, (x, y))
+
+    def display_countdown(self, value_to_display):
+        center_y = HEIGHT // 2
+        self.text(
+            txt = str(value_to_display),
+            x = WIDTH // 4,
+            y = center_y,
+            font_size = 100,
+            color=(0,255,0)
+        )
+        self.text(
+            txt = str(value_to_display),
+            x = 3 * (WIDTH // 4),
+            y = center_y,
+            font_size = 100,
+            color=(0,255,0)
+        )
 
     def apply_game_state(self, game_state_data: dict, sender_id: str):
         """
@@ -107,9 +162,6 @@ class Pong:
             paddle_data = game_state.paddle.to_dict()
             ball_data = game_state.ball.to_dict() if game_state.ball else None
             score = game_state.score
-
-            #if ball_data:
-            #    print(f'BALL DATA: {ball_data["x"]}')
 
             if score is not None:
                 self.score = score
@@ -173,9 +225,19 @@ class Pong:
             self.handle_events()
             self._update()
             self._draw()
+            self.clock.tick(FPS)  
 
-            # Prepare and send game state
-            if self.is_leader:
+        self.quit()
+
+    def _update(self):
+        """
+        Update game objects.
+        """
+        if self.is_leader and self.ball:
+            self.ball.update(list(self.paddles.values()))
+
+        if self.is_running:
+            if self.is_leader and self.ball:
                 game_state = GameState(self.paddle, self.ball, self.score)
             else:
                 game_state = GameState(self.paddle)
@@ -189,17 +251,13 @@ class Pong:
                 }
             )
             self.peer.send_public_message(game_state_message)
-
-            self.clock.tick(60)  # Maintain 60 FPS
-
-        self.quit()
-
-    def _update(self):
-        """
-        Update game objects.
-        """
-        if self.is_leader and self.ball:
-            self.ball.update(list(self.paddles.values()))
+        else:
+            ingame_message = Message(
+                id = str(self.peer.id),
+                type = "ingame",
+                data = {}
+            )
+            self.peer.send_public_message(ingame_message)
 
     def _draw(self):
         """
@@ -217,6 +275,10 @@ class Pong:
         score_text = font.render(f"{self.score[0]} : {self.score[1]}", True, WHITE)
         score_text_rect = score_text.get_rect(center=(WIDTH // 2, 50))
         self.screen.blit(score_text, score_text_rect)
+
+        # Render countdown
+        if self.countdown:
+            self.display_countdown(self.countdown)
 
         pygame.display.flip()
 

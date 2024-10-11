@@ -1,7 +1,7 @@
 from Game.game import Pong
 from Menu.menu import menu
 
-if __name__ == "__main__":
+if __name__ == "__main__": 
     # Menu
     peer = menu()
     print(f'Peer ID: {peer.id}, IS LEADER: {peer.is_leader}, LEADER ID: {peer.leader_id}')
