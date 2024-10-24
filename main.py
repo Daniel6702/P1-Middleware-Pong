@@ -10,7 +10,7 @@ if __name__ == "__main__":
     The output of the menu is a Peer object, connected to a set of other peers. 
     Allowing it to send and receive messages. With one, and only one, of the peers being the leader.
     '''
-
+    
     # Game
     game = Pong(peer)
     game.run()

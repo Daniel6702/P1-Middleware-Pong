@@ -7,6 +7,8 @@ from properties import POLL_RATE
 from Middleware.utils import get_ipv4
 from Middleware.message import Message
 from dataclasses import asdict
+import time
+import queue
 
 class Peer:
     def __init__(self, 
@@ -24,12 +26,15 @@ class Peer:
 
         self.setup_zmq()
 
+        from Middleware.logging_service import LoggingService
+        self.logging_service = LoggingService()
+
         # Initialize DiscoveryService
-        from Middleware.discovery import DiscoveryService
+        from Middleware.discovery_service import DiscoveryService
         self.discovery_service = DiscoveryService(self)
 
         # Initialize LeaderSelectionService
-        from Middleware.leader_selection import LeaderSelectionService
+        from Middleware.leader_election_service import LeaderSelectionService
         self.leader_service = LeaderSelectionService(self)
 
     def get_peers(self):
@@ -70,6 +75,7 @@ class Peer:
 
     # Use the publisher socket to send messages to other peers
     def send_public_message(self, message: Message):
+        self.logging_service.on_message_sent(message)
         serialized_message = message.to_json()
         topic = "public"
         full_message = f"{topic} {serialized_message}"
@@ -77,6 +83,7 @@ class Peer:
 
     # Use the publisher socket to send private messages
     def send_private_message(self, peer_id: str, message: Message):
+        self.logging_service.on_message_sent(message)
         topic = f"private:{peer_id}"
         serialized_message = message.to_json()
         full_message = f"{topic} {serialized_message}"
@@ -90,7 +97,7 @@ class Peer:
         
         while True:
             try:
-                socks = dict(poller.poll(1000))  # Adjust POLL_RATE as needed
+                socks = dict(poller.poll(POLL_RATE))  # Adjust POLL_RATE as needed
 
                 if self.subscriber in socks and socks[self.subscriber] == zmq.POLLIN:
                     raw_message = self.subscriber.recv_string()
@@ -99,11 +106,15 @@ class Peer:
                         topic, message_json = raw_message.split(' ', 1)
                     except ValueError:
                         print(f"Received malformed message: {raw_message}")
+                        self.logging_service.increment_error_count()
                         continue
 
                     message = Message.from_json(message_json)
                     if message is None:
-                        continue  # Skip processing if message couldn't be decoded
+                        self.logging_service.increment_error_count()
+                        continue
+
+                    self.logging_service.on_message_received(message)
 
                     # Handle the message based on its type
                     if message.type in ["election", "answer", "coordinator", "heartbeat"]:
@@ -117,6 +128,7 @@ class Peer:
                 continue
             except Exception as e: 
                 print(f"Error receiving message: {e}")
+                self.logging_service.increment_error_count()
 
     def get_peer_by_id(self, peer_id: str):
         for peer in self.peers:
@@ -129,4 +141,5 @@ class Peer:
         self.subscriber.close()
         self.context.term()
         self.discovery_service.stop_discovery()
+        self.logging_service.kill()
         print(f"{self.id} shut down successfully.")

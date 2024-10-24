@@ -8,6 +8,7 @@ from Middleware.peer import Peer
 import json 
 from Middleware.message import Message
 from Game.GameState import GameState
+import time
 
 class Pong:
     def __init__(self, peer: 'Peer', name: str = "player1"):
@@ -169,7 +170,13 @@ class Pong:
         """
         Main game loop.
         """
+        last_time = time.time()
         while self.running:
+            current_time = time.time()
+            delta = current_time - last_time
+            if delta >= 1.0:
+                self.peer.logging_service.add_fps_sample(self.clock.get_fps())
+                last_time = current_time
             self.handle_events()
             self._update()
             self._draw()
@@ -226,4 +233,5 @@ class Pong:
         """
         pygame.quit()
         sys.exit()
+
 
