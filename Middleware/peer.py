@@ -26,8 +26,8 @@ class Peer:
 
         self.setup_zmq()
 
-        #from Middleware.logging_service import LoggingService
-        #self.logging_service = LoggingService()
+        from Middleware.logging_service import LoggingService
+        self.logging_service = LoggingService()
 
         # Initialize DiscoveryService
         from Middleware.discovery_service import DiscoveryService
@@ -75,7 +75,7 @@ class Peer:
 
     # Use the publisher socket to send messages to other peers
     def send_public_message(self, message: Message):
-        #self.logging_service.on_message_sent(message)
+        self.logging_service.on_message_sent(message)
         serialized_message = message.to_json()
         topic = "public"
         full_message = f"{topic} {serialized_message}"
@@ -83,7 +83,7 @@ class Peer:
 
     # Use the publisher socket to send private messages
     def send_private_message(self, peer_id: str, message: Message):
-        #self.logging_service.on_message_sent(message)
+        self.logging_service.on_message_sent(message)
         topic = f"private:{peer_id}"
         serialized_message = message.to_json()
         full_message = f"{topic} {serialized_message}"
@@ -110,11 +110,11 @@ class Peer:
                         continue
 
                     message = Message.from_json(message_json)
-                    #if message is None:
-                    #    self.logging_service.increment_error_count()
-                    #    continue
+                    if message is None:
+                        self.logging_service.increment_error_count()
+                        continue
 
-                    #self.logging_service.on_message_received(message)
+                    self.logging_service.on_message_received(message)
 
                     # Handle the message based on its type
                     if message.type in ["election", "answer", "coordinator", "heartbeat"]:
