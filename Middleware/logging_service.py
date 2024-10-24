@@ -37,7 +37,7 @@ class LogDropoutRate:
     def log_dropout_rate(self):
         with open(f"{LOGS_DIR}/dropout_rate.log", "a", buffering=1) as f:
             while True:
-                time.sleep(LOG_RATE) 
+                time.sleep(LOG_RATE//20) 
                 with self.dropout_lock:
                     sent = len(self.sent_messages)
                     received = len(self.received_messages)

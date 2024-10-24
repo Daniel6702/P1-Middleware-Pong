@@ -11,8 +11,9 @@ def plot_transmission_times(
     log_rate: Optional[float] = None
 ) -> Optional[plt.Figure]:
     """
-    Reads transmission times from a log file and plots them over time or sequence.
-
+    Reads transmission times from a log file and plots them over time or sequence,
+    including an average transmission time line.
+    
     Parameters:
     - log_file (str): Path to the transmission times log file.
     - output_image (str): Path where the plot image will be saved.
@@ -72,6 +73,16 @@ def plot_transmission_times(
         linestyle='-'
     )
 
+    # Calculate and plot the average transmission time
+    average_time = data['transmission_time'].mean()
+    plt.axhline(
+        y=average_time,
+        color='red',
+        linestyle='--',
+        linewidth=2,
+        label=f'Average Transmission Time ({average_time:.2f} s)'
+    )
+
     # Beautify the plot
     plt.title('Transmission Times Over Time', fontsize=18)
     plt.xlabel('Time' if log_rate else 'Sequence', fontsize=14)
@@ -101,22 +112,3 @@ def plot_transmission_times(
 
     # Return the figure object
     return plt.gcf()
-
-# Example usage:
-if __name__ == "__main__":
-    # Example 1: Plot using sequence index
-    plot_transmission_times(
-        log_file='logs/transmission_times.log',
-        output_image='plots/transmission_times_plot.png',
-        show_plot=True,
-        log_rate=None  # No log rate provided; x-axis will be sequence index
-    )
-
-    # Example 2: Plot using inferred timestamps with a known log rate
-    # Assuming LOG_RATE is 1 second between logs
-    plot_transmission_times(
-        log_file='logs/transmission_times.log',
-        output_image='plots/transmission_times_with_timestamps_plot.png',
-        show_plot=True,
-        log_rate=1.0  # Time interval in seconds between logs
-    )
