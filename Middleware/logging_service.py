@@ -7,6 +7,8 @@ import psutil
 import statistics
 import os
 from properties import LOGS_DIR, LOG_RATE
+import requests
+from datetime import datetime, timedelta
 
 class LogTransmissionTimes:
     def __init__(self):
@@ -201,7 +203,6 @@ class LogFPS:
         with self.fps_lock:
             self.fps_samples.append(fps)
 
-
 class LoggingService(
     LogTransmissionTimes,   # Time taken for a message to be sent and received
     LogDropoutRate,         # Rate of messages sent but not received
@@ -211,6 +212,8 @@ class LoggingService(
     LogErrorRate,           # Number of errors in message handling per minute
     LogResourceUtilization, # CPU and memory usage of the process 
     LogFPS):                # Frames per second of the game
+
+    TIME_SYNC_INTERVAL = 300  # Time sync interval in seconds (5 minutes)
 
     def __init__(self):
         os.makedirs(LOGS_DIR, exist_ok=True)
@@ -223,8 +226,31 @@ class LoggingService(
         LogResourceUtilization.__init__(self)
         LogFPS.__init__(self)
 
+        self.time_offset = timedelta(0)
+        self.last_sync_time = None
+        self.time_sync_thread = threading.Thread(target=self.synchronize_time_periodically, daemon=True)
+        self.time_sync_thread.start()
+        
+        # Initial synchronization
+        self.synchronize_time()
+
+    def synchronize_time(self):
+        external_time = self.get_time_timeapi_io()
+        if external_time:
+            self.time_offset = external_time - datetime.utcnow()
+            self.last_sync_time = datetime.utcnow()
+
+    def synchronize_time_periodically(self):
+        while True:
+            self.synchronize_time()
+            time.sleep(self.TIME_SYNC_INTERVAL)
+
+    def get_adjusted_time(self):
+        # Use the offset to calculate the approximate current time
+        return datetime.utcnow() + self.time_offset
+
     def on_message_sent(self, message: Message):
-        message.send_timestamp = time.time()
+        message.send_timestamp = self.get_adjusted_time()
         self.increment_sent_message(message.id)
         self.increment_sent_throughput() 
         serialized_message = message.to_json()
@@ -232,12 +258,12 @@ class LoggingService(
         self.add_bytes_sent(message_size)
 
     def on_message_received(self, message: Message):
-        message.receive_timestamp = time.time()
+        message.receive_timestamp = self.get_adjusted_time()
         self.increment_received_message(message.id)
         self.increment_received_throughput()
 
         if message.send_timestamp:
-            transmission_time = message.receive_timestamp - message.send_timestamp
+            transmission_time = (message.receive_timestamp - message.send_timestamp).total_seconds()
             self.transmission_times.put(transmission_time)
             if transmission_time > self.max_allowed_latency:
                 self.increment_real_time_violations()
@@ -246,6 +272,18 @@ class LoggingService(
         message_size = len(serialized_message.encode('utf-8'))
         self.add_bytes_received(message_size)
 
+    def get_time_timeapi_io(self, timezone='UTC'):
+        url = f'https://timeapi.io/api/Time/current/zone?timeZone={timezone}'
+        try:
+            response = requests.get(url)
+            data = response.json()
+            hour = data['hour']
+            minute = data['minute']
+            second = data['seconds']
+            millisecond = data['milliSeconds']
+            current_time = datetime.utcnow().replace(hour=hour, minute=minute, second=second, microsecond=millisecond*1000)
+            return current_time
 
-
-        
+        except Exception as e:
+            print(f"Error fetching time: {e}")
+            return None
