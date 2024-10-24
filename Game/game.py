@@ -175,7 +175,7 @@ class Pong:
             current_time = time.time()
             delta = current_time - last_time
             if delta >= 1.0:
-                self.peer.logging_service.add_fps_sample(self.clock.get_fps())
+                #self.peer.logging_service.add_fps_sample(self.clock.get_fps())
                 last_time = current_time
             self.handle_events()
             self._update()
