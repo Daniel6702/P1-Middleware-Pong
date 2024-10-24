@@ -16,9 +16,7 @@ if __name__ == "__main__":
 
     #plot_throughput(log_file='logs/throughput.log',output_image='plots/throughput_plot.png',show_plot=True)
     log_files = [
-        'logs/droprate1/dropout_rate1.log',
-        'logs/droprate1/dropout_rate2.log',
-        'logs/droprate1/dropout_rate3.log',
-        'logs/droprate1/dropout_rate4.log'
+        'logs/droprate2/dropout_rate1.log',
+        'logs/droprate2/dropout_rate2.log'
     ]
     #plot_drop_rate(log_files)
