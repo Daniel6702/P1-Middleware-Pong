@@ -79,7 +79,6 @@ class LogRealTimeViolations:
         with self.real_time_lock:
             self.real_time_violations += 1
 
-
 class LogThroughput:
     def __init__(self):
         self.throughput_sent = 0

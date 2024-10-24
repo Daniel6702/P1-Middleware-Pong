@@ -75,7 +75,7 @@ def plot_transmission_times(
     # Beautify the plot
     plt.title('Transmission Times Over Time', fontsize=18)
     plt.xlabel('Time' if log_rate else 'Sequence', fontsize=14)
-    plt.ylabel('Transmission Time (ms)', fontsize=14)
+    plt.ylabel('Transmission Time (s)', fontsize=14)
     plt.legend(fontsize=12)
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 

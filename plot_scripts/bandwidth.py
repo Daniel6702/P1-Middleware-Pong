@@ -78,7 +78,7 @@ def plot_bandwidth(
     # Beautify the plot
     plt.title('Sent and Received Bandwidth Over Time', fontsize=16)
     plt.xlabel('Time', fontsize=14)
-    plt.ylabel('Bandwidth (Mbps)', fontsize=14)
+    plt.ylabel('Bandwidth (Mbpm)', fontsize=14)
     plt.legend(fontsize=12)
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 
