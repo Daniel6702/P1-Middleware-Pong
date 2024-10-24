@@ -38,6 +38,7 @@ BALL_SPEED_Y = 6
 
 #Logging
 LOGS_DIR = "logs"
+LOG_RATE = 10 # Log every 10 seconds
 
 #Peer
 POLL_RATE = 1000 

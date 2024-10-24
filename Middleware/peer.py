@@ -27,7 +27,7 @@ class Peer:
         self.setup_zmq()
 
         from Middleware.logging_service import LoggingService
-        self.logging_service = LoggingService(self)
+        self.logging_service = LoggingService()
 
         # Initialize DiscoveryService
         from Middleware.discovery_service import DiscoveryService
@@ -141,4 +141,5 @@ class Peer:
         self.subscriber.close()
         self.context.term()
         self.discovery_service.stop_discovery()
+        self.logging_service.kill()
         print(f"{self.id} shut down successfully.")

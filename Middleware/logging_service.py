@@ -6,7 +6,7 @@ from Middleware.message import Message
 import psutil
 import statistics
 import os
-from properties import LOGS_DIR
+from properties import LOGS_DIR, LOG_RATE
 
 class LogTransmissionTimes:
     def __init__(self):
@@ -16,56 +16,67 @@ class LogTransmissionTimes:
         logging_thread.start()
 
     def log_transmission_times(self):
-        with open(f"{LOGS_DIR}/transmission_times.log", "a") as f:
+        with open(f"{LOGS_DIR}/transmission_times.log", "a", buffering=1) as f:
             while True:
                 try:
-                    transmission_time = self.transmission_times.get(timeout=10)
+                    transmission_time = self.transmission_times.get(timeout=LOG_RATE)
                     f.write(f"{transmission_time}\n")
                 except queue.Empty:
                     continue
 
 class LogDropoutRate:
     def __init__(self):
-        self.sent_messages = set()
-        self.received_messages = set()
+        self.sent_messages = []
+        self.received_messages = []
         self.dropout_lock = threading.Lock()
         dropout_logging_thread = threading.Thread(target=self.log_dropout_rate, daemon=True)
         dropout_logging_thread.start()
 
     def log_dropout_rate(self):
-        with open(f"{LOGS_DIR}/dropout_rate.log", "a") as f:
+        with open(f"{LOGS_DIR}/dropout_rate.log", "a", buffering=1) as f:
             while True:
-                time.sleep(60)  # Log every minute
+                time.sleep(LOG_RATE) 
                 with self.dropout_lock:
                     sent = len(self.sent_messages)
                     received = len(self.received_messages)
-                    dropped = sent - received
-                    dropout_rate = (dropped / sent) * 100 if sent > 0 else 0
-                    f.write(f"{time.time()},{sent},{received},{dropped},{dropout_rate}\n")
-                    print(f"Dropout Rate: {dropout_rate:.2f}%")
+                    f.write(f"{time.time()},{sent},{received}\n")
+                    print(f"Sent: {sent}, Received: {received}")
+                    self.sent_messages.clear()
+                    self.received_messages.clear()
+
+    def increment_sent_message(self, msg_id):
+        with self.dropout_lock:
+            self.sent_messages.append(msg_id)
+
+    def increment_received_message(self, msg_id):
+        with self.dropout_lock:
+            self.received_messages.append(msg_id)
 
 class LogRealTimeViolations:
     def __init__(self):
-        self.max_allowed_latency = 0.1 # 100 ms
-        self.real_time_violations = 0
-        self.real_time_lock = threading.Lock()
+        self.max_allowed_latency = 0.1 
+        self.real_time_violations = 0  
+        self.real_time_lock = threading.Lock() 
+
         real_time_logging_thread = threading.Thread(target=self.log_real_time_constraints, daemon=True)
         real_time_logging_thread.start()
 
     def log_real_time_constraints(self):
-        with open(f"{LOGS_DIR}/real_time_constraints.log", "a") as f:
+        with open(f"{LOGS_DIR}/real-time_violations.log", "a", buffering=1) as f:
             while True:
-                time.sleep(60)  # Log every minute
+                time.sleep(LOG_RATE)
                 with self.real_time_lock:
                     violations = self.real_time_violations
-                    f.write(f"{time.time()},{violations}\n")
-                    print(f"Real-Time Violations: {violations}")
-                    # Reset counter after logging
+                    violations_per_minute = violations * (60 / LOG_RATE)
+                    log_entry = f"{time.time()},{violations_per_minute:.2f}\n"
+                    f.write(log_entry)
+                    print(f"Real-Time Violations: {violations_per_minute:.2f} per minute")
                     self.real_time_violations = 0
 
     def increment_real_time_violations(self):
         with self.real_time_lock:
             self.real_time_violations += 1
+
 
 class LogThroughput:
     def __init__(self):
@@ -76,15 +87,14 @@ class LogThroughput:
         throughput_logging_thread.start()
 
     def log_throughput(self): 
-        with open(f"{LOGS_DIR}/throughput.log", "a") as f:
+        with open(f"{LOGS_DIR}/throughput.log", "a", buffering=1) as f:
             while True:
-                time.sleep(1)  # Log every second
+                time.sleep(LOG_RATE)  
                 with self.throughput_lock:
                     sent = self.throughput_sent
                     received = self.throughput_received
                     f.write(f"{time.time()},{sent},{received}\n")
-                    print(f"Throughput - Sent: {sent}/s, Received: {received}/s")
-                    # Reset counters
+                    print(f"Throughput - Sent: {sent//LOG_RATE}/s, Received: {received//LOG_RATE}/s")
                     self.throughput_sent = 0
                     self.throughput_received = 0
     
@@ -105,26 +115,31 @@ class LogBandwidth:
         bandwidth_logging_thread.start()
 
     def log_bandwidth(self):
-        with open(f"{LOGS_DIR}/bandwidth.log", "a") as f:
+        with open(f"{LOGS_DIR}/bandwidth.log", "a", buffering=1) as f:
             while True:
-                time.sleep(60)  # Log every minute
+                time.sleep(LOG_RATE)
                 with self.bandwidth_lock:
                     sent = self.bytes_sent
                     received = self.bytes_received
-                    f.write(f"{time.time()},{sent},{received}\n")
-                    print(f"Bandwidth - Sent: {sent / (1024 * 1024):.2f} MB/min, Received: {received / (1024 * 1024):.2f} MB/min")
+
+                    # Calculate MB per minute
+                    sent_bandwidth = (sent * (60 / LOG_RATE)) / (1024 * 1024)
+                    received_bandwidth = (received * (60 / LOG_RATE)) / (1024 * 1024)
+
+                    f.write(f"{time.time()},{sent_bandwidth:.2f},{received_bandwidth:.2f}\n")
+                    print(f"Bandwidth - Sent: {sent_bandwidth:.2f} MB/min, Received: {received_bandwidth:.2f} MB/min")
+
                     # Reset counters
                     self.bytes_sent = 0
                     self.bytes_received = 0
-    
+
     def add_bytes_sent(self, byte_count):
         with self.bandwidth_lock:
             self.bytes_sent += byte_count
-    
+
     def add_bytes_received(self, byte_count):
         with self.bandwidth_lock:
             self.bytes_received += byte_count
-
 class LogErrorRate:
     def __init__(self):
         self.error_count = 0
@@ -133,14 +148,13 @@ class LogErrorRate:
         error_logging_thread.start()
 
     def log_errors(self):
-        with open(f"{LOGS_DIR}/errors.log", "a") as f:
+        with open(f"{LOGS_DIR}/errors.log", "a", buffering=1) as f:
             while True:
-                time.sleep(60)  # Log every minute
+                time.sleep(LOG_RATE)  
                 with self.error_lock:
                     errors = self.error_count
                     f.write(f"{time.time()},{errors}\n")
                     print(f"Errors in the last minute: {errors}")
-                    # Reset counter
                     self.error_count = 0
     
     def increment_error_count(self):
@@ -153,9 +167,9 @@ class LogResourceUtilization:
         resource_logging_thread.start()
 
     def log_resources(self):
-        with open(f"{LOGS_DIR}/resources.log", "a") as f:
+        with open(f"{LOGS_DIR}/resources.log", "a", buffering=1) as f:
             while True:
-                time.sleep(60)  # Log every minute
+                time.sleep(LOG_RATE)  
                 process = psutil.Process()
                 cpu_percent = process.cpu_percent(interval=1)  # CPU usage over the last second
                 memory_info = process.memory_info()
@@ -171,9 +185,9 @@ class LogFPS:
         fps_logging_thread.start()
 
     def log_fps(self):
-        with open(f"{LOGS_DIR}/fps.log", "a") as f:
+        with open(f"{LOGS_DIR}/fps.log", "a", buffering=1) as f:
             while True:
-                time.sleep(60)  # Log every minute
+                time.sleep(LOG_RATE)  
                 with self.fps_lock:
                     if self.fps_samples:
                         avg_fps = statistics.mean(self.fps_samples)
@@ -198,34 +212,40 @@ class LoggingService(
     LogResourceUtilization, # CPU and memory usage of the process 
     LogFPS):                # Frames per second of the game
 
-    def __init__(self, peer: 'Peer'):
+    def __init__(self):
         os.makedirs(LOGS_DIR, exist_ok=True)
-        super().__init__()
-        self.peer = peer
+        LogTransmissionTimes.__init__(self)
+        LogDropoutRate.__init__(self)
+        LogRealTimeViolations.__init__(self)
+        LogThroughput.__init__(self)
+        LogBandwidth.__init__(self)
+        LogErrorRate.__init__(self)
+        LogResourceUtilization.__init__(self)
+        LogFPS.__init__(self)
 
     def on_message_sent(self, message: Message):
         message.send_timestamp = time.time()
-        with self.dropout_lock:
-            self.sent_messages.add(message.msg_id)
+        self.increment_sent_message(message.id)
         self.increment_sent_throughput() 
         serialized_message = message.to_json()
         message_size = len(serialized_message.encode('utf-8'))
         self.add_bytes_sent(message_size)
 
     def on_message_received(self, message: Message):
-        if message.msg_id:
-            with self.dropout_lock:
-                self.received_messages.add(message.id)
-        
+        message.receive_timestamp = time.time()
+        self.increment_received_message(message.id)
         self.increment_received_throughput()
 
         if message.send_timestamp:
             transmission_time = message.receive_timestamp - message.send_timestamp
             self.transmission_times.put(transmission_time)
-
             if transmission_time > self.max_allowed_latency:
                 self.increment_real_time_violations()
 
         serialized_message = message.to_json()
         message_size = len(serialized_message.encode('utf-8'))
         self.add_bytes_received(message_size)
+
+
+
+        
