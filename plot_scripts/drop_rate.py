@@ -1,4 +1,19 @@
 import matplotlib.pyplot as plt
+import numpy as np
+
+
+def compress_array(arr, chunk_size):
+    # Ensure the array length is a multiple of the chunk_size by trimming excess elements
+    trimmed_length = len(arr) - (len(arr) % chunk_size)
+    trimmed_arr = arr[:trimmed_length]
+
+    # Reshape the array to create chunks of size chunk_size
+    reshaped_arr = trimmed_arr.reshape(-1, chunk_size)
+
+    # Calculate the mean of each chunk
+    compressed_arr = reshaped_arr.mean(axis=1)
+
+    return compressed_arr
 
 def plot_drop_rates(log_files):
     """
@@ -33,9 +48,12 @@ def plot_drop_rates(log_files):
             drop_rate = (sent - received) / sent
             drop_rates.append(drop_rate)
 
+        print(sum(drop_rates) / len(drop_rates))
+        avg_drop_rates = compress_array(np.array(drop_rates), chunk_size=5)
+
         # Plot drop rates over interval indices
-        intervals = range(len(drop_rates))
-        plt.plot(intervals[1:], drop_rates[1:], label=f"Peer {i+1}")
+        intervals = range(len(avg_drop_rates))
+        plt.plot(intervals, avg_drop_rates, label=f"Peer {i+1}")
     
     plt.xlabel('Interval')
     plt.ylabel('Drop Rate')
